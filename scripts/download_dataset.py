@@ -1,7 +1,8 @@
 import requests
 import os
 from pathlib import Path
-
+import platform
+import zipfile
 
 def download_file_from_google_drive(gdriveID, destination):
     URL = "https://docs.google.com/uc?export=download"
@@ -27,7 +28,7 @@ def get_confirm_token(response):
 
 
 def save_response_content(response, destination):
-    CHUNK_SIZE = 32768
+    CHUNK_SIZE = 1024
 
     with open(destination, "wb") as f:
         for chunk in response.iter_content(CHUNK_SIZE):
@@ -36,10 +37,10 @@ def save_response_content(response, destination):
 
 
 if __name__ == "__main__":
-    outputTrainCsv = "../data/train.csv"
-    outputUnicodeTranslation = "../data/unicode_translation.csv"
-    outputTrainImages = "../data/train_images.zip"
-    outputTestImages = "../data/test_images.zip"
+    outputTrainCsv = "./data/train.csv"
+    outputUnicodeTranslation = "./data/unicode_translation.csv"
+    outputTrainImages = "./data/train.zip"
+    outputTestImages = "./data/test.zip"
     outputs = [outputTrainCsv, outputUnicodeTranslation, outputTrainImages, outputTestImages]
 
     googleFileID_trainCSV = "1QkUqqFG3mOVvyvoOcOP3uaYmfgrLTxcU"
@@ -54,8 +55,19 @@ if __name__ == "__main__":
     print('Download Complete!')
     print('Uncompressing files ...')
     dataDir = os.path.join(Path(__file__).parent.parent, 'data')
-    os.system(f"unzip \"{os.path.join(dataDir, 'train_images.zip')}\" -d \"{os.path.join(dataDir, 'train')}\"")
-    os.system(f"unzip \"{os.path.join(dataDir, 'test_images.zip')}\" -d \"{os.path.join(dataDir, 'test')}\"")
-    os.system(f"rm \"{os.path.join(dataDir, 'train_images.zip')}\"")
-    os.system(f"rm \"{os.path.join(dataDir, 'test_images.zip')}\"")
+
+    os_name = platform.system()
+    if os_name == 'Linux':
+        os.system(f"unzip \"{os.path.join(dataDir, 'train.zip')}\" -d \"{os.path.join(dataDir, 'train')}\"")
+        os.system(f"unzip \"{os.path.join(dataDir, 'test.zip')}\" -d \"{os.path.join(dataDir, 'test')}\"")
+        os.system(f"rm \"{os.path.join(dataDir, 'train_.zip')}\"")
+        os.system(f"rm \"{os.path.join(dataDir, 'test.zip')}\"")
+    elif os_name == 'Windows':
+        with zipfile.ZipFile(outputTrainImages, 'r') as zip_ref:
+            zip_ref.extractall("./data/train")
+        with zipfile.ZipFile(outputTestImages, 'r') as zip_ref:
+            zip_ref.extractall("./data/test")
+        os.system(f"del {os.path.join(dataDir, 'train.zip')}")
+        os.system(f"del {os.path.join(dataDir, 'test.zip')}")
+
     print('All done! :D')
