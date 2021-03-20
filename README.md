@@ -32,11 +32,11 @@ Install requirements.
 
 ```pip install -r requirements.txt```
 
-Then, Download dataset and pre-processing.
+Then, download raw dataset and pre-process it to create a TF Dataset. You should select the kind of model for which you intend to use the data with the flags ```--classifier``` or ```--identifier```. You can create your own config files in the folder ```./config```, following the template specified in ```./config/default.py```.
 
 ```
 python scripts/download_dataset.py
-python data_loader.py --config TODO
+python data_loader.py --config default --identifier
 ```
 
 Finally, start train and evaluate model
