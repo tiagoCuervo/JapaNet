@@ -1,2 +1,5 @@
+tqdm
+numpy
+pandas
 requests
 tensorflow==2.4.0

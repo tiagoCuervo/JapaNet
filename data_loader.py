@@ -1,127 +1,86 @@
-# -*- coding: utf-8 -*-
-from __future__ import print_function
-
 import argparse
-import os
-
+import pandas as pd
 import numpy as np
-from hbconfig import Config
 import tensorflow as tf
+import importlib
+from tqdm.auto import tqdm
 
 
+def _addIdentificationLabels(df):
+    for i in range(len(df)):
+        pageData = np.array(df.loc[i, "labels"].split(" ")).reshape(-1, 5)
+        # We drop character label, we won't need it for detection
+        pageData = pageData[:, 1:].astype('uint32')
+        pageData[:, 0] += pageData[:, 2] // 2  # Center on X
+        pageData[:, 1] += pageData[:, 3] // 2  # Center on Y
+        df.loc[i, "labels"] = pageData[:, :2].ravel()
+    return df
 
 
-def process_data():
-    print('Preprocessing data to be model-ready ...')
-
-    # create path to store all the train & test encoder & decoder
-    os.mkdir(Config.data.base_path + Config.data.processed_path)
-
-    preprocessing()
+def _bytesFeature(value):
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-def preprocessing():
-    # TODO: implements logic
-    pass
+def _floatFeature(value):
+    return tf.train.Feature(float_list=tf.train.FloatList(value=value))
 
 
-def read_data():
-    # TODO: implements logic
-    pass
+class IdentifierDataset:
+    def __init__(self, config):
+        self.config = config
+        self.recordPath = 'train/train.tfrecord'
+        self.writer = tf.io.TFRecordWriter(self.recordPath)
+        self.feature_description = {
+            'image': tf.io.FixedLenFeature([], tf.string),
+            'labels': tf.io.VarLenFeature(dtype=tf.float32)
+        }
 
+    def _write(self, image, label):
+        feature = {
+            'image': _bytesFeature(image),
+            'labels': _floatFeature(label.astype(np.float32))
+        }
+        sample = tf.train.Example(features=tf.train.Features(feature=feature))
+        self.writer.write(sample.SerializeToString())
 
-def make_train_and_test_set(shuffle=True):
-    print("make Training data and Test data Start....")
+    def _processExample(self, example):
+        pmap = tf.io.parse_single_example(example, self.feature_description)
+        imageDecoded = tf.image.decode_jpeg(pmap['image'], channels=3) / 255
+        imageResized = tf.image.resize(imageDecoded, [self.config.identifierInputWidth,
+                                                      self.config.identifierInputHeight])
+        # label = tf.sparse.to_dense(pmap['labels'])
+        # return imageResized, label
+        return imageResized
 
-    # load train and test dataset
-    train_X, train_y = read_data()
-    test_X, test_y = read_data()
+    def _read(self):
+        record = tf.data.TFRecordDataset(self.recordPath)
+        trainData = record.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        trainData = trainData.shuffle(buffer_size=100)
+        trainData = trainData.batch(self.config.batchSize, drop_remainder=True)
+        trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+        return trainData
 
-    assert len(train_X) == len(train_y)
-    assert len(test_X) == len(test_y)
-
-    print(f"train data count : {len(train_y)}")
-    print(f"test data count : {len(test_y)}")
-
-    if shuffle:
-        print("shuffle dataset ...")
-        train_p = np.random.permutation(len(train_y))
-        test_p = np.random.permutation(len(test_y))
-
-        return ((train_X[train_p], train_y[train_p]),
-                (test_X[test_p], test_y[test_p]))
-    else:
-        return ((train_X, train_y),
-                (test_X, test_y))
-
-
-def make_batch(X, y, buffer_size=10000, batch_size=64, scope="train"):
-
-    class IteratorInitializerHook(tf.train.SessionRunHook):
-        """Hook to initialise data iterator after Session is created."""
-
-        def __init__(self):
-            super(IteratorInitializerHook, self).__init__()
-            self.iterator_initializer_func = None
-
-        def after_create_session(self, session, coord):
-            """Initialise the iterator after the session has been created."""
-            self.iterator_initializer_func(session)
-
-
-    iterator_initializer_hook = IteratorInitializerHook()
-
-    def inputs():
-        with tf.name_scope(scope):
-
-            # Define placeholders
-            input_placeholder = tf.placeholder(
-                tf.int32, [None] * len(X.shape), name="input_placeholder")
-            target_placeholder = tf.placeholder(
-                tf.int32, [None] * len(y.shape), name="target_placeholder")
-
-            # Build dataset iterator
-            dataset = tf.data.Dataset.from_tensor_slices(
-                (input_placeholder, target_placeholder))
-
-            if scope == "train":
-                dataset = dataset.repeat(None)  # Infinite iterations
-            else:
-                dataset = dataset.repeat(1)  # one Epoch
-
-            dataset = dataset.shuffle(buffer_size=buffer_size)
-            dataset = dataset.batch(batch_size)
-
-            iterator = dataset.make_initializable_iterator()
-            next_input, next_target = iterator.get_next()
-
-            tf.identity(next_input[0], 'input_0')
-            tf.identity(next_target[0], 'target_0')
-
-            # Set runhook to initialize iterator
-            iterator_initializer_hook.iterator_initializer_func = \
-                lambda sess: sess.run(
-                    iterator.initializer,
-                    feed_dict={input_placeholder: X,
-                               target_placeholder: y})
-
-            # Return batched (features, labels)
-            return next_input, next_target
-
-    # Return function and hook
-    return inputs, iterator_initializer_hook
-
-
+    def createDataset(self):
+        dfTrain = pd.read_csv('data/train.csv')
+        dfTrain = _addIdentificationLabels(dfTrain)
+        for i in tqdm(range(len(dfTrain))):
+            sample = dfTrain.iloc[i]
+            self._write(open("data/train/" + sample['image_id'] + ".jpg", 'rb').read(), sample['labels'])
+        self.writer.flush()
+        self.writer.close()
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(
-                        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--config', type=str, default='config',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--config', type=str, default='default',
                         help='config file name')
+    parser.add_argument('--identifier', dest='identifier', action='store_true')
+    parser.set_defaults(identifier=False)
     args = parser.parse_args()
 
-    Config(args.config)
+    config = importlib.import_module(f"config.{args.config}")
 
-    process_data()
+    if args.identifier:
+        dataset = IdentifierDataset(config.datasetParams)
+        dataset.createDataset()

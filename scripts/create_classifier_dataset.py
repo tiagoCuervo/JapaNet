@@ -6,7 +6,7 @@ import IPython.display as display
 import matplotlib.pyplot as plt
 from PIL import Image
 import tensorflow as tf
-import pickle 
+import pickle
 import time
 
 data_directory = pathlib.Path("./data/train_char")
@@ -19,8 +19,8 @@ data_directory = pathlib.Path("./data/train_char")
 # with open('./data/CLASSES', 'rb') as fp:
 #     CLASSES = pickle.load(fp)
 
-#tf.data.Dataset object 
-list_dataset = tf.data.Dataset.list_files(str(data_directory/'*/*'))
+# tf.data.Dataset object
+list_dataset = tf.data.Dataset.list_files(str(data_directory / '*/*'))
 
 
 class DataSetCreator(object):
@@ -30,12 +30,10 @@ class DataSetCreator(object):
         self.image_width = image_width
         self.dataset = dataset
 
-
     def _get_class(self, path):
         path_splited = tf.strings.split(path, os.path.sep)
         print(path_splited[-2])
-        return  path_splited[-2]
-
+        return path_splited[-2]
 
     def _load_image(self, path):
         image = tf.io.read_file(path)
