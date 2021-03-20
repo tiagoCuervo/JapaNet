@@ -3,6 +3,8 @@ import pandas as pd
 import PIL
 import numpy as np
 import matplotlib.pyplot as plt
+import cv2
+from tqdm import tqdm
 
 
 dataPath = "./data"
@@ -74,17 +76,74 @@ class ScripturePage:
 data = [ScripturePage(train_df.loc[i]) for i in range(len(train_df))]
 
 
-def make_classifier_data(data, crop_size=(64, 64)):
+def page_binarizer(data):
+    '''
+    taken from the following Kaggle notebook https://www.kaggle.com/pr1c3f1eld/data-cleaning-and-pre-processing
+    '''
+
+    img_0_orig = cv2.imread(data)
+    img_0_orig = cv2.cvtColor(img_0_orig, cv2.COLOR_BGR2RGB)
+
+    img_0 = cv2.imread(data)
+    img_0 = cv2.cvtColor(img_0, cv2.COLOR_BGR2GRAY)
+    
+    # "Ben's prerocessing"
+    blur = cv2.GaussianBlur(img_0,(3,3),0)
+    sharp_mask = np.subtract(img_0, blur)
+    img_0 = cv2.addWeighted(img_0,1, sharp_mask,10, 0)
+
+    ret,th = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+
+    kernel_1 = np.ones((5,5),np.uint8)
+    kernel_2 = np.ones((1,1),np.uint8)
+
+    opening = cv2.morphologyEx(th, cv2.MORPH_OPEN, kernel_1)
+    closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel_2)
+
+    mask = cv2.bitwise_not(closing)
+    mask = cv2.cvtColor(closing, cv2.COLOR_GRAY2RGB)
+    img = cv2.add(img_0_orig,mask)
+
+    # "Ben's prerocessing"
+    blur_1 = cv2.GaussianBlur(img, (13,13), 0)
+    sharp_mask_1 = np.subtract(img,blur_1)
+    sharp_mask_1 = cv2.GaussianBlur(sharp_mask_1, (7,7), 0)
+    img = cv2.addWeighted(img,1,sharp_mask_1,-10, 0)
+
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    return img
+
+def make_bw_pages(data):
     '''
     data: List of ScripturePage
     '''
     pages_checked = []
+    print("Starting binarizing")
+    os.makedirs(f"./data/bw_train", exist_ok=True)
+    for page in tqdm(data):
+        binary_page = page_binarizer(page.get_file())
+        im_page = PIL.Image.fromarray(binary_page)
+        id_page = page.id
+        im_page.save(f"./data/bw_train/{id_page}.jpg")
+        pages_checked.append(id_page)
+    print("All pages checked!")
+    return pages_checked
+
+bw_pages = make_bw_pages(data)
+
+
+''' 
+WORK IN PROGRESS
+def make_bw_classifier_data(data, crop_size=(64, 64)):
+
+    pages_checked = []
     print("Starting cropping")
-    for page in data:
+    for page in tqdm(data):
         # counter to enumerate characters
         counter = 0
         #open the respective image of the page
-        im_page = page.get_im()
+        bin_page = page_binarizer(page.get_file())
+        im_page = PIL.Image.fromarray(bin_page)
         id_page = page.id
         pages_checked.append(id_page)
         for char in page.labels:
@@ -94,12 +153,10 @@ def make_classifier_data(data, crop_size=(64, 64)):
             # resizing
             im_char = im_char.resize(crop_size)
             # saving character image
-            os.makedirs(f"./data/train_char/{char.char}", exist_ok=True)
-            im_char.save(f"./data/train_char/{char.char}/{id_page}_{counter}.jpg")
+            os.makedirs(f"./data/bw_train_char/{char.char}", exist_ok=True)
+            im_char.save(f"./data/bw_train_char/{char.char}/{id_page}_{counter}.jpg")
 
             counter += 1
     print("All pages checked!")
     return pages_checked
-
-
-cropped_pages = make_classifier_data(data)
+'''
