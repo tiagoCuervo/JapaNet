@@ -26,20 +26,20 @@
 - `train_and_evaluate` : Interleaves training and evaluation.
 
 
-## Usage Example
+## Usage
 
-Install requirements.
+1. Install requirements.
 
-```pip install -r requirements.txt```
+    ```pip install -r requirements.txt```
 
-Then, download raw dataset and pre-process it to create a TF Dataset. You should select the kind of model for which you intend to use the data with the flags ```--classifier``` or ```--identifier```. You can create your own config files in the folder ```./config```, following the template specified in ```./config/default.py```.
+2. Download raw data set and pre-process it to create a TensorFlow input pipeline using the file ```data_loader.py```:
 
-```
-python scripts/download_dataset.py
-python data_loader.py --config default --identifier
-```
+    ```
+    python scripts/download_dataset.py
+    python data_loader.py --identifier --config default
+    ```
+    You should select the kind of model for which you intend to use the data with the flags ```--classifier``` or ```--identifier```. The parameters of the input pipeline should be specified in a config file in the folder ```./config``` (You can create your own set ups following the template specified in ```./config/default.py```).
+    
+3. Finally, train and/or evaluate a model:
 
-Finally, start train and evaluate model
-
-```python main.py --config TODO --mode train_and_evaluate```
-
+    ```python main.py --identifier --config default --mode train_and_evaluate```
