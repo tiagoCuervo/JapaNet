@@ -7,12 +7,19 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import tensorflow as tf
 import pickle 
+import time
 
 data_directory = pathlib.Path("./data/train_char")
 
-with open('./data/CLASSES', 'rb') as fp:
-    CLASSES = pickle.load(fp)
+# ALL_CLASSES = np.array([item.name for item in data_directory.glob(
+#     '*') )
 
+# np.save("ALL_CLASSES.npy", ALL_CLASSES, allow_pickle = True)
+
+# with open('./data/CLASSES', 'rb') as fp:
+#     CLASSES = pickle.load(fp)
+
+#tf.data.Dataset object 
 list_dataset = tf.data.Dataset.list_files(str(data_directory/'*/*'))
 
 
@@ -22,6 +29,7 @@ class DataSetCreator(object):
         self.image_height = image_height
         self.image_width = image_width
         self.dataset = dataset
+
 
     def _get_class(self, path):
         path_splited = tf.strings.split(path, os.path.sep)
@@ -33,6 +41,7 @@ class DataSetCreator(object):
         image = tf.io.read_file(path)
         image = tf.image.decode_jpeg(image, channels=3)
         image = tf.image.convert_image_dtype(image, tf.float32)
+        # ADD PREPROCESSING HERE
         return tf.image.resize(image, [self.image_height, self.image_width])
 
     def _load_labeled_data(self, path):
@@ -64,3 +73,7 @@ class DataSetCreator(object):
 # dataProcessor.load_process()
 
 # image_batch, label_batch = dataProcessor.get_batch()
+
+# for img in image_batch:
+#     plt.imshow(img)
+#     time.sleep(3)
