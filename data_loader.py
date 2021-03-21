@@ -123,7 +123,7 @@ class IdentifierDataset:
         trainData = trainData.shuffle(buffer_size=self.config['identifierShufflingBufferSize'])
         trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-        validationRecord = tf.data.TFRecordDataset(self.trainRecordPath)
+        validationRecord = tf.data.TFRecordDataset(self.validationRecordPath)
         validationData = validationRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         validationData = validationData.batch(self.config['batchSize'], drop_remainder=True)
         validationData = validationData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
@@ -178,7 +178,7 @@ class ClassifierDataset:
     def _processSample(self, rawSample):
         image = Image.open("data/train_char/" + rawSample['unicode'] + "/" + rawSample['image_id'] + ".jpg")
         resizedImage = image.resize((self.config['classifierInputWidth'], self.config['classifierInputHeight']))
-        return image2Bytes(resizedImage) , rawSample['label']
+        return image2Bytes(resizedImage) 
 
     def createDataset(self):
         trainCharDir = Path("data/train_char")
@@ -188,8 +188,8 @@ class ClassifierDataset:
         self.label_to_code = label_to_code
         for i in tqdm(range(len(dfTrain))):
             sample = dfTrain.iloc[i]
-            imageBytes, label = self._processSample(sample)
-            self._write(imageBytes, label)
+            imageBytes = self._processSample(sample)
+            self._write(imageBytes, sample['label'])
         self._trainWriter.flush()
         self._trainWriter.close()
         self._validationWriter.flush()
@@ -198,8 +198,8 @@ class ClassifierDataset:
     def _processExample(self, example):
         pmap = tf.io.parse_single_example(example, self.feature_description)
         image = tf.image.decode_jpeg(pmap['image'], channels=3) / 255
-        label = self.label_to_code(pmap['label'])
-        return image, label
+        
+        return image, pmap['label']
 
 
     def load(self):
