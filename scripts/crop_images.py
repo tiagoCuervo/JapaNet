@@ -3,7 +3,7 @@ import pandas as pd
 import PIL
 import numpy as np
 import matplotlib.pyplot as plt
-
+from pathlib import Path
 
 dataPath = "./data"
 train_df = pd.read_csv(os.path.join(dataPath, "train.csv").replace("\\","/"))
@@ -102,4 +102,24 @@ def make_classifier_data(data, crop_size=(64, 64)):
     return pages_checked
 
 
+
+
 cropped_pages = make_classifier_data(data)
+
+
+# deleting extra characters not available in the unicode dictionary.
+ALL_CLASSES = set(np.load("./data/ALL_CLASSES.npy"))
+with open('./data/CLASSES', 'rb') as fp:
+    CLASSES = pickle.load(fp)
+
+img_classes_path = Path('./data/train_char')
+CLASSES = set(CLASSES)
+
+CLASSES_ERASE = ALL_CLASSES - CLASSES
+
+for CLASS in CLASSES_ERASE:
+    folder_path = os.path.join(img_classes_path, f"{CLASS}")
+    try:
+        folder_path.rmdir()
+    except OSError as e:
+        print(f"Error: {folder_path} : {e.strerror}")
