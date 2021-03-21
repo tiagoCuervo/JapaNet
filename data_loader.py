@@ -22,7 +22,7 @@ def _addClassificationLabels(imgs_folder_path):
                 pair_img_label.append([img_id.split('.')[0], CLASS])
 
     df = pd.DataFrame(pair_img_label, columns=['image_id', 'unicode'])
-    codes, unique = pd.factorize(df)
+    codes, unique = pd.factorize(df.unicode)
     df['label'] = codes
 
     return df, unique
