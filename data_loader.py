@@ -21,8 +21,11 @@ def _addClassificationLabels(imgs_folder_path):
             for img_id in os.listdir(class_dir):
                 pair_img_label.append([img_id.split('.')[0], CLASS])
 
-    df = pd.DataFrame(pair_img_label, columns=['image_id', 'label'])
-    return df
+    df = pd.DataFrame(pair_img_label, columns=['image_id', 'unicode'])
+    codes, unique = pd.factorize(df)
+    df['label'] = codes
+
+    return df, unique
 
 
 def bytesFeature(value):
@@ -144,12 +147,16 @@ class IdentifierDataset:
 class ClassifierDataset:
     def __init__(self, config):
         self.config = config
-        self.recordPath = 'train/train_classifier.tfrecord'
-        self.writer = tf.io.TFRecordWriter(self.recordPath)
+        self.trainRecordPath = 'data/train_classifier/train_classifier.tfrecord'
+        self.validationRecordPath = 'data/train_classifier/validation_identifier.tfrecord'
+        
         self.feature_description = {
             'image': tf.io.FixedLenFeature([], dtype=tf.string),
             'label': tf.io.FixedLenFeature([], dtype=tf.int16)
         }
+        self._trainWriter = None
+        self._validationWriter = None
+        self.label_to_code=None
 
     def _write(self, image, label):
         feature = {
@@ -157,39 +164,54 @@ class ClassifierDataset:
             'label': int64Feature(label)
         }
         sample = tf.train.Example(features=tf.train.Features(feature=feature))
-        self.writer.write(sample.SerializeToString())
-
-    def _processExample(self, example):
-        pmap = tf.io.parse_single_example(example, self.feature_description)
-        image = tf.image.decode_jpeg(pmap['image'], channels=3) / 255
-        label = tf.sparse.to_dense(pmap['labels'])
-        return image, label
-
-    def load(self):
-        record = tf.data.TFRecordDataset(self.recordPath)
-        trainData = record.map(
-            self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        trainData = trainData.shuffle(buffer_size=self.config['classifierShufflingBufferSize'])
-        trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
-        trainData = trainData.prefetch(
-            buffer_size=tf.data.experimental.AUTOTUNE)
-        return trainData
+        
+        # TO BE MODIFIED
+        if random.random() < self.config['validationFraction']:
+            self._validationWriter.write(sample.SerializeToString())
+        else:
+            self._trainWriter.write(sample.SerializeToString())
+    
+    
 
     def _processSample(self, rawSample):
         image = Image.open("data/train_char/" + rawSample['label'] + "/" + rawSample['image_id'] + ".jpg")
         resizedImage = image.resize((self.config['classifierInputWidth'], self.config['classifierInputHeight']))
-        return image2Bytes(resizedImage)
+        return image2Bytes(resizedImage) , tf.int16(rawSample['label'])
 
     def createDataset(self):
         trainCharDir = Path("data/train_char")
-        dfTrain = _addClassificationLabels(trainCharDir)
+        dfTrain, label_to_code = _addClassificationLabels(trainCharDir)
+        self._trainWriter = tf.io.TFRecordWriter(self.trainRecordPath)
+        self._validationWriter = tf.io.TFRecordWriter(self.validationRecordPath)
+        self.label_to_code = label_to_code
         for i in tqdm(range(len(dfTrain))):
             sample = dfTrain.iloc[i]
             imageBytes = self._processSample(sample)
             self._write(imageBytes, sample['label'])
-        self.writer.flush()
-        self.writer.close()
+        self._trainWriter.flush()
+        self._trainWriter.close()
+        self._validationWriter.flush()
+        self._validationWriter.close()
 
+    def _processExample(self, example):
+        pmap = tf.io.parse_single_example(example, self.feature_description)
+        image = tf.image.decode_jpeg(pmap['image'], channels=3) / 255
+        label = self.label_to_code(pmap['label'])
+        return image, label
+
+
+    def load(self):
+        trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)
+        trainData = record.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        trainData = trainData.shuffle( buffer_size=self.config['classifierShufflingBufferSize'])
+        trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
+        trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
+        validationRecord = tf.data.TFRecordDataset(self.validationRecordPath)
+        validationData = validationRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        validationData = validationData.batch(self.config['batchSize'], drop_remainder=True)
+        validationData = validationData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+        return trainData, validationData
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
