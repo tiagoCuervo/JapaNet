@@ -205,7 +205,7 @@ class ClassifierDataset:
 
     def load(self):
         trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)
-        trainData = record.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        trainData = trainRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         trainData = trainData.shuffle( buffer_size=self.config['classifierShufflingBufferSize'])
         trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
