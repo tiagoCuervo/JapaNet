@@ -11,21 +11,7 @@ import os
 from pathlib import Path
 
 
-def _addClassificationLabels(imgs_folder_path):
-    pair_img_label = []
-    for CLASS in os.listdir(imgs_folder_path):
-        if CLASS == 'train_char.zip':
-            continue
-        else:
-            class_dir = os.path.join(imgs_folder_path, CLASS)
-            for img_id in os.listdir(class_dir):
-                pair_img_label.append([img_id.split('.')[0], CLASS])
 
-    df = pd.DataFrame(pair_img_label, columns=['image_id', 'unicode'])
-    codes, unique = pd.factorize(df.unicode)
-    df['label'] = codes
-
-    return df, unique
 
 
 def bytesFeature(value):
@@ -144,6 +130,22 @@ class IdentifierDataset:
         return trainData, validationData
 
 
+def _addClassificationLabels(imgs_folder_path):
+    pair_img_label = []
+    for CLASS in os.listdir(imgs_folder_path):
+        if CLASS == 'train_char.zip':
+            continue
+        else:
+            class_dir = os.path.join(imgs_folder_path, CLASS)
+            for img_id in os.listdir(class_dir):
+                pair_img_label.append([img_id.split('.')[0], CLASS])
+
+    df = pd.DataFrame(pair_img_label, columns=['image_id', 'unicode'])
+    codes, unique = pd.factorize(df.unicode)
+    df['label'] = codes
+
+    return df, unique
+
 class ClassifierDataset:
     def __init__(self, config):
         self.config = config
@@ -174,9 +176,9 @@ class ClassifierDataset:
     
 
     def _processSample(self, rawSample):
-        image = Image.open("data/train_char/" + rawSample['label'] + "/" + rawSample['image_id'] + ".jpg")
+        image = Image.open("data/train_char/" + rawSample['unicode'] + "/" + rawSample['image_id'] + ".jpg")
         resizedImage = image.resize((self.config['classifierInputWidth'], self.config['classifierInputHeight']))
-        return image2Bytes(resizedImage) , tf.int16(rawSample['label'])
+        return image2Bytes(resizedImage) , rawSample['label']
 
     def createDataset(self):
         trainCharDir = Path("data/train_char")
@@ -186,8 +188,8 @@ class ClassifierDataset:
         self.label_to_code = label_to_code
         for i in tqdm(range(len(dfTrain))):
             sample = dfTrain.iloc[i]
-            imageBytes = self._processSample(sample)
-            self._write(imageBytes, sample['label'])
+            imageBytes, label = self._processSample(sample)
+            self._write(imageBytes, label)
         self._trainWriter.flush()
         self._trainWriter.close()
         self._validationWriter.flush()
