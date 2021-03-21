@@ -154,11 +154,12 @@ class ClassifierDataset:
         
         self.feature_description = {
             'image': tf.io.FixedLenFeature([], dtype=tf.string),
-            'label': tf.io.FixedLenFeature([], dtype=tf.int16)
+            'label': tf.io.FixedLenFeature([], dtype=tf.int64)
         }
         self._trainWriter = None
         self._validationWriter = None
-        self.label_to_code=None
+        self.dfTrain, self.label_to_code = _addClassificationLabels(Path("data/train_char"))
+
 
     def _write(self, image, label):
         feature = {
@@ -181,14 +182,13 @@ class ClassifierDataset:
         return image2Bytes(resizedImage) 
 
     def createDataset(self):
-        trainCharDir = Path("data/train_char")
-        dfTrain, label_to_code = _addClassificationLabels(trainCharDir)
-        dfTrain = dfTrain.sample(frac=1)
+
+        self.dfTrain = self.dfTrain.sample(frac=1)
         self._trainWriter = tf.io.TFRecordWriter(self.trainRecordPath)
         self._validationWriter = tf.io.TFRecordWriter(self.validationRecordPath)
         self.label_to_code = label_to_code
-        for i in tqdm(range(len(dfTrain))):
-            sample = dfTrain.iloc[i]
+        for i in tqdm(range(len(self.dfTrain))):
+            sample = self.dfTrain.iloc[i]
             imageBytes = self._processSample(sample)
             self._write(imageBytes, sample['label'])
         self._trainWriter.flush()
