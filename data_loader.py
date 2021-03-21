@@ -17,7 +17,7 @@ def _addClassificationLabels(imgs_folder_path):
         if CLASS == 'train_char.zip':
             continue
         else:
-            class_dir = os.path.join(folders_dir, CLASS)
+            class_dir = os.path.join(imgs_folder_path, CLASS)
             for img_id in os.listdir(class_dir):
                 pair_img_label.append([img_id.split('.')[0], CLASS])
 
