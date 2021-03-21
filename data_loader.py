@@ -52,10 +52,10 @@ class IdentifierDataset:
         # return imageResized, label
         return imageResized
 
-    def _read(self):
+    def load(self):
         record = tf.data.TFRecordDataset(self.recordPath)
         trainData = record.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        trainData = trainData.shuffle(buffer_size=100)
+        trainData = trainData.shuffle(buffer_size=self.config.shufflingBufferSize)
         trainData = trainData.batch(self.config.batchSize, drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
         return trainData
