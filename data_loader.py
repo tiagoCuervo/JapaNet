@@ -141,7 +141,9 @@ if __name__ == '__main__':
     parser.add_argument('--config', type=str, default='default',
                         help='config file name')
     parser.add_argument('--identifier', dest='identifier', action='store_true')
+    parser.add_argument('--classifier', dest='classifier', action='store_true')
     parser.set_defaults(identifier=False)
+    parser.set_defaults(classifier=False)
 
     args = parser.parse_args()
 
@@ -151,6 +153,6 @@ if __name__ == '__main__':
         dataset = IdentifierDataset(config.datasetParams)
         dataset.createDataset()
 
-    if not arg.identifier:
+    if arg.classifier:
         dataset = ClassifierDataset(config.datasetParams)
         dataset.createDataset()
