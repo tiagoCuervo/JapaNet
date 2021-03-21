@@ -1,3 +1,4 @@
+PIL
 tqdm
 numpy
 pandas

@@ -4,17 +4,15 @@ import numpy as np
 import tensorflow as tf
 import importlib
 from tqdm.auto import tqdm
+from PIL import Image
+import io
+import random
 
 
-def _addIdentificationLabels(df):
-    for i in range(len(df)):
-        pageData = np.array(df.loc[i, "labels"].split(" ")).reshape(-1, 5)
-        # We drop character label, we won't need it for detection
-        pageData = pageData[:, 1:].astype('uint32')
-        pageData[:, 0] += pageData[:, 2] // 2  # Center on X
-        pageData[:, 1] += pageData[:, 3] // 2  # Center on Y
-        df.loc[i, "labels"] = pageData[:, :2].ravel()
-    return df
+def image2Bytes(image):
+    buffer = io.BytesIO()
+    image.save(buffer, format='JPEG')
+    return buffer.getvalue()
 
 
 def _bytesFeature(value):
@@ -28,46 +26,101 @@ def _floatFeature(value):
 class IdentifierDataset:
     def __init__(self, config):
         self.config = config
-        self.recordPath = 'train/train.tfrecord'
-        self.writer = tf.io.TFRecordWriter(self.recordPath)
+        self.trainRecordPath = 'data/train/train.tfrecord'
+        self.validationRecordPath = 'data/train/validation.tfrecord'
         self.feature_description = {
-            'image': tf.io.FixedLenFeature([], tf.string),
-            'labels': tf.io.VarLenFeature(dtype=tf.float32)
+            'image': tf.io.FixedLenFeature([], dtype=tf.string),
+            'labels': tf.io.FixedLenFeature([128 * 128 * 5], dtype=tf.float32)
         }
+        self._trainWriter = None
+        self._validationWriter = None
 
     def _write(self, image, label):
         feature = {
             'image': _bytesFeature(image),
-            'labels': _floatFeature(label.astype(np.float32))
+            'labels': _floatFeature(label.ravel())
         }
         sample = tf.train.Example(features=tf.train.Features(feature=feature))
-        self.writer.write(sample.SerializeToString())
+        if random.random() < self.config['validationFraction']:
+            self._trainWriter.write(sample.SerializeToString())
+        else:
+            self._validationWriter.write(sample.SerializeToString())
+
+    def _createLabel(self, rawLabel, resizedRatioWidth=1.0, resizedRatioHeight=1.0):
+        outputWidth = self.config['identifierInputWidth'] // self.config['identifierOutputStride']
+        outputHeight = self.config['identifierInputHeight'] // self.config['identifierOutputStride']
+        pageData = np.array(rawLabel.split(" ")).reshape(-1, 5)
+        pageData = pageData[:, 1:].astype('uint32')
+        pageData[:, [0, 2]] = pageData[:, [0, 2]] // resizedRatioWidth
+        pageData[:, [1, 3]] = pageData[:, [1, 3]] // resizedRatioHeight
+        xCenters = pageData[:, 0] + pageData[:, 2] // 2  # Center on X
+        yCenters = pageData[:, 1] + pageData[:, 3] // 2  # Center on Y
+        heatMapXCenters = (xCenters / self.config['identifierOutputStride']).astype(np.uint32)
+        heatMapYCenters = (yCenters / self.config['identifierOutputStride']).astype(np.uint32)
+        xOffset = (xCenters / self.config['identifierOutputStride'] - heatMapXCenters)
+        yOffset = (yCenters / self.config['identifierOutputStride'] - heatMapYCenters)
+        xSizes = pageData[:, 2] / self.config['identifierOutputStride']
+        ySizes = pageData[:, 3] / self.config['identifierOutputStride']
+
+        label = np.zeros((outputHeight, outputWidth, 5))
+        for i in range(len(xCenters)):
+            xCenter = heatMapXCenters[i]
+            yCenter = heatMapYCenters[i]
+            heatMap = ((np.exp(-(((np.arange(outputWidth) - xCenter) / (xSizes[i] / 10)) ** 2) / 2)).reshape(1, -1)
+                       * (np.exp(-(((np.arange(outputHeight) - yCenter) / (ySizes[i] / 10)) ** 2) / 2)).reshape(-1, 1))
+            label[:, :, 0] = np.maximum(label[:, :, 0], heatMap)
+            label[yCenter, xCenter, 1] = xSizes[i] / outputWidth
+            label[yCenter, xCenter, 2] = ySizes[i] / outputHeight
+            label[yCenter, xCenter, 3] = xOffset[i] / outputWidth
+            label[yCenter, xCenter, 4] = yOffset[i] / outputHeight
+        return label
+
+    def _processSample(self, rawSample):
+        # Resizes image, gets its JPEG compressed data, and computes the new bounding boxes after resizing
+        image = Image.open("data/train/" + rawSample['image_id'] + ".jpg")
+        originalWidth = image.size[0]
+        originalHeight = image.size[1]
+        resizedImage = image.resize((self.config['identifierInputWidth'], self.config['identifierInputHeight']))
+        imageBytes = image2Bytes(resizedImage)
+        # Creates label (heatmap, xSize, ySize, xOffset, yOffset)
+        label = self._createLabel(rawSample['labels'], originalWidth / self.config['identifierInputWidth'],
+                                  originalHeight / self.config['identifierInputHeight'])
+        return imageBytes, label
+
+    def createDataset(self):
+        dfTrain = pd.read_csv('data/train.csv')
+        self._trainWriter = tf.io.TFRecordWriter(self.trainRecordPath)
+        self._validationWriter = tf.io.TFRecordWriter(self.validationRecordPath)
+        for i in tqdm(range(len(dfTrain))):
+            sample = dfTrain.iloc[i]
+            imageBytes, label = self._processSample(sample)
+            self._write(imageBytes, label)
+        self._trainWriter.flush()
+        self._trainWriter.close()
+        self._validationWriter.flush()
+        self._validationWriter.close()
 
     def _processExample(self, example):
         pmap = tf.io.parse_single_example(example, self.feature_description)
         imageDecoded = tf.image.decode_jpeg(pmap['image'], channels=3) / 255
-        imageResized = tf.image.resize(imageDecoded, [self.config.identifierInputWidth,
-                                                      self.config.identifierInputHeight])
-        # label = tf.sparse.to_dense(pmap['labels'])
-        # return imageResized, label
-        return imageResized
+        imageResized = tf.image.resize(imageDecoded, [self.config['identifierInputWidth'],
+                                                      self.config['identifierInputHeight']])
+        outputWidth = self.config['identifierInputWidth'] // self.config['identifierOutputStride']
+        outputHeight = self.config['identifierInputHeight'] // self.config['identifierOutputStride']
+        label = tf.reshape(pmap['labels'], (outputWidth, outputHeight, 5))
+        return imageResized, label
 
     def load(self):
-        record = tf.data.TFRecordDataset(self.recordPath)
-        trainData = record.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        trainData = trainData.shuffle(buffer_size=self.config.shufflingBufferSize)
-        trainData = trainData.batch(self.config.batchSize, drop_remainder=True)
+        trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)
+        trainData = trainRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        trainData = trainData.shuffle(buffer_size=self.config['shufflingBufferSize'])
+        trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
-        return trainData
-
-    def createDataset(self):
-        dfTrain = pd.read_csv('data/train.csv')
-        dfTrain = _addIdentificationLabels(dfTrain)
-        for i in tqdm(range(len(dfTrain))):
-            sample = dfTrain.iloc[i]
-            self._write(open("data/train/" + sample['image_id'] + ".jpg", 'rb').read(), sample['labels'])
-        self.writer.flush()
-        self.writer.close()
+        validationRecord = tf.data.TFRecordDataset(self.trainRecordPath)
+        validationData = validationRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        validationData = validationData.batch(self.config['batchSize'], drop_remainder=True)
+        validationData = validationData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+        return trainData, validationData
 
 
 if __name__ == '__main__':
@@ -79,8 +132,6 @@ if __name__ == '__main__':
     parser.set_defaults(identifier=False)
     args = parser.parse_args()
 
-    config = importlib.import_module(f"config.{args.config}")
-
     if args.identifier:
-        dataset = IdentifierDataset(config.datasetParams)
+        dataset = IdentifierDataset(importlib.import_module(f"config.{args.config}").datasetParams)
         dataset.createDataset()
