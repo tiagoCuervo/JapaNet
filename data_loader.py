@@ -147,8 +147,8 @@ class IdentifierDataset:
 class ClassifierDataset:
     def __init__(self, config):
         self.config = config
-        self.trainRecordPath = 'data/train_classifier/train_classifier.tfrecord'
-        self.validationRecordPath = 'data/train_classifier/validation_identifier.tfrecord'
+        self.trainRecordPath = 'data/train/train_classifier.tfrecord'
+        self.validationRecordPath = 'data/train/validation_classifier.tfrecord'
         
         self.feature_description = {
             'image': tf.io.FixedLenFeature([], dtype=tf.string),
