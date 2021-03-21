@@ -25,12 +25,16 @@ def _addClassificationLabels(imgs_folder_path):
     return df
 
 
-def _bytesFeature(value):
+def bytesFeature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
 
-def _floatFeature(value):
+def floatFeature(value):
     return tf.train.Feature(float_list=tf.train.FloatList(value=value))
+
+
+def int64Feature(value):
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
 
 
 def image2Bytes(image):
@@ -53,8 +57,8 @@ class IdentifierDataset:
 
     def _write(self, image, label):
         feature = {
-            'image': _bytesFeature(image),
-            'labels': _floatFeature(label.ravel())
+            'image': bytesFeature(image),
+            'labels': floatFeature(label.ravel())
         }
         sample = tf.train.Example(features=tf.train.Features(feature=feature))
         if random.random() < self.config['validationFraction']:
@@ -127,7 +131,7 @@ class IdentifierDataset:
     def load(self):
         trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)
         trainData = trainRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        trainData = trainData.shuffle(buffer_size=self.config['shufflingBufferSize'])
+        trainData = trainData.shuffle(buffer_size=self.config['identifierShufflingBufferSize'])
         trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
         validationRecord = tf.data.TFRecordDataset(self.trainRecordPath)
@@ -144,13 +148,13 @@ class ClassifierDataset:
         self.writer = tf.io.TFRecordWriter(self.recordPath)
         self.feature_description = {
             'image': tf.io.FixedLenFeature([], dtype=tf.string),
-            'label': tf.io.FixedLenFeature([], dtype=tf.string)
+            'label': tf.io.FixedLenFeature([], dtype=tf.int16)
         }
 
     def _write(self, image, label):
         feature = {
-            'image': _bytesFeature(image),
-            'label': _bytesFeature(label)
+            'image': bytesFeature(image),
+            'label': int64Feature(label)
         }
         sample = tf.train.Example(features=tf.train.Features(feature=feature))
         self.writer.write(sample.SerializeToString())
@@ -165,7 +169,7 @@ class ClassifierDataset:
         record = tf.data.TFRecordDataset(self.recordPath)
         trainData = record.map(
             self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        trainData = trainData.shuffle(buffer_size=self.config['shufflingBufferSize'])
+        trainData = trainData.shuffle(buffer_size=self.config['classifierShufflingBufferSize'])
         trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
         trainData = trainData.prefetch(
             buffer_size=tf.data.experimental.AUTOTUNE)

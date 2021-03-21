@@ -1,5 +1,6 @@
 datasetParams = {
-    'shufflingBufferSize': 100,
+    'identifierShufflingBufferSize': 100,
+    'classifierShufflingBufferSize': 100,
     'batchSize': 32,
     'identifierInputHeight': 512,
     'identifierInputWidth': 512,
