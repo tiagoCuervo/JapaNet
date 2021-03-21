@@ -183,6 +183,7 @@ class ClassifierDataset:
     def createDataset(self):
         trainCharDir = Path("data/train_char")
         dfTrain, label_to_code = _addClassificationLabels(trainCharDir)
+        dfTrain = dfTrain.sample(frac=1)
         self._trainWriter = tf.io.TFRecordWriter(self.trainRecordPath)
         self._validationWriter = tf.io.TFRecordWriter(self.validationRecordPath)
         self.label_to_code = label_to_code
