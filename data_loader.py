@@ -9,7 +9,7 @@ import io
 import random
 import os
 from pathlib import Path
-
+import tensorflow_addons as tfa
 
 
 
@@ -222,12 +222,14 @@ class ClassifierDataset:
         
         code = self.label_to_code.lookup(label)
         p_augment = 1/self.code_to_freq[code]
-        if np.random.rand()<p_augment:
+        if True or np.random.rand()<p_augment:
             image = tf.image.random_brightness(image, max_delta=32.0 / 255.0)
             image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
 
             image = tf.clip_by_value(image, 0.0, 1.0)
 
+            image = tfa.image.rotate(image, tf.random.uniform([], minval=-0.174533/2,
+            maxval=0.174533/2, dtype=tf.float32), fill_value = 1.0)
         return image, label
 
     def oversample_classes(self,example, oversampling_coef=0.9):
