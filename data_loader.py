@@ -141,10 +141,17 @@ def _addClassificationLabels(imgs_folder_path):
                 pair_img_label.append([img_id.split('.')[0], CLASS])
 
     df = pd.DataFrame(pair_img_label, columns=['image_id', 'unicode'])
-    codes, unique = pd.factorize(df.unicode)
-    df['label'] = codes
+    label, unique = pd.factorize(df.unicode)
+    label_to_code = {key : value for key,value in zip(label,unique)}
+    df['label'] = label
 
-    return df, unique
+    return df, label_to_code
+
+
+
+
+ 
+
 
 class ClassifierDataset:
     def __init__(self, config):
@@ -159,7 +166,7 @@ class ClassifierDataset:
         self._trainWriter = None
         self._validationWriter = None
         self.dfTrain, self.label_to_code = _addClassificationLabels(Path("data/train_char"))
-
+        self.dfCharFreq = pd.read_csv(Path("data/char_freq.csv"))
 
     def _write(self, image, label):
         feature = {
@@ -167,8 +174,7 @@ class ClassifierDataset:
             'label': int64Feature(label)
         }
         sample = tf.train.Example(features=tf.train.Features(feature=feature))
-        
-        # TO BE MODIFIED
+    
         if random.random() < self.config['validationFraction']:
             self._validationWriter.write(sample.SerializeToString())
         else:
@@ -186,6 +192,7 @@ class ClassifierDataset:
         self.dfTrain = self.dfTrain.sample(frac=1)
         self._trainWriter = tf.io.TFRecordWriter(self.trainRecordPath)
         self._validationWriter = tf.io.TFRecordWriter(self.validationRecordPath)
+
         for i in tqdm(range(len(self.dfTrain))):
             sample = self.dfTrain.iloc[i]
             imageBytes = self._processSample(sample)
@@ -198,14 +205,60 @@ class ClassifierDataset:
     def _processExample(self, example):
         pmap = tf.io.parse_single_example(example, self.feature_description)
         image = tf.image.decode_jpeg(pmap['image'], channels=3) / 255
+        label = pmap['label']
         
-        return image, pmap['label']
+
+        return image, label
+
+    def _augmenter(self,image, label):
+        p_augment = self.dfCharFreq[self.dfCharFreq['Unicode']== self.label_to_code[label.ref()]].probability.item()
+
+        if np.random.rand()<p_augment:
+            image = tf.image.random_brightness(image, max_delta=32.0 / 255.0)
+            image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
+
+            image = tf.clip_by_value(image, 0.0, 1.0)
+
+        return image, label
+
+    def oversample_classes(self,example, oversampling_coef=0.9):
+        """
+        Returns the number of copies of given example
+        """
+        pmap  = tf.io.parse_single_example(example, self.feature_description)
+        label = pmap['label']
+        code  = self.label_to_code[label.ref()]
+        class_prob = self.dfCharFreq[self.char_freq['Unicode']==code].Frequency.item()/self.char_freq.Frequency.su()
+        class_target_prob = 1/4206
+        prob_ratio = tf.cast(class_target_prob/class_prob, dtype=tf.float32)
+        # soften ratio is oversampling_coef==0 we recover original distribution
+        prob_ratio = prob_ratio ** oversampling_coef
+        # for classes with probability higher than class_target_prob we
+        # want to return 1
+        prob_ratio = tf.maximum(prob_ratio, 1)
+        # for low probability classes this number will be very large
+        repeat_count = tf.floor(prob_ratio)
+        # prob_ratio can be e.g 1.9 which means that there is still 90%
+        # of change that we should return 2 instead of 1
+        repeat_residual = prob_ratio - repeat_count  # a number between 0-1
+        residual_acceptance = tf.less_equal(
+            tf.random.uniform([], dtype=tf.float32), repeat_residual
+        )
+
+        residual_acceptance = tf.cast(residual_acceptance, tf.int64)
+        repeat_count = tf.cast(repeat_count, dtype=tf.int64)
+
+        return repeat_count + residual_acceptance
 
 
     def load(self):
         trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)
+        #Oversampling low frequency classes
+        # trainData = trainRecord.flat_map(lambda x: tf.data.Dataset.from_tensors(x).repeat(self.oversample_classes(x)))
         trainData = trainRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         trainData = trainData.shuffle( buffer_size=self.config['classifierShufflingBufferSize'])
+        #augmenter
+        # trainData = trainData.map(self._augmenter, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
