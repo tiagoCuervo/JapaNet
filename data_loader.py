@@ -222,7 +222,7 @@ class ClassifierDataset:
         
         code = self.label_to_code.lookup(label)
         p_augment = 1/self.code_to_freq[code]
-        if True or np.random.rand()<p_augment:
+        if np.random.rand()<p_augment:
             image = tf.image.random_brightness(image, max_delta=32.0 / 255.0)
             image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
 
