@@ -142,15 +142,8 @@ def _addClassificationLabels(imgs_folder_path):
 
     df = pd.DataFrame(pair_img_label, columns=['image_id', 'unicode'])
     label, unique = pd.factorize(df.unicode)
-    label_to_code = {key : value for key,value in zip(label,unique)}
     df['label'] = label
-
-    return df, label_to_code
-
-
-
-
- 
+    return df
 
 
 class ClassifierDataset:
@@ -165,8 +158,23 @@ class ClassifierDataset:
         }
         self._trainWriter = None
         self._validationWriter = None
-        self.dfTrain, self.label_to_code = _addClassificationLabels(Path("data/train_char"))
+        self.dfTrain = _addClassificationLabels(Path("data/train_char"))
         self.dfCharFreq = pd.read_csv(Path("data/char_freq.csv"))
+
+        label, unique = pd.factorize(self.dfCharFreq.Unicode)
+        label_to_code_dict = {key: value for key, value in zip(label, unique)}
+
+        # build a lookup table
+        self.label_to_code = tf.lookup.StaticHashTable(
+        tf.lookup.KeyValueTensorInitializer(tf.constant(list(label_to_code_dict.keys()), dtype=tf.int64), tf.constant(list(
+            label_to_code_dict.values())), value_dtype=tf.string),
+        default_value='-1')
+
+        # self.code_to_freq = {key: value for key,value in zip(self.dfCharFreq.Unicode,self.dfCharFreq.Frequency)}
+        self.code_to_freq = tf.lookup.StaticHashTable(
+            tf.lookup.KeyValueTensorInitializer(
+                tf.constant(self.dfCharFreq.Unicode), tf.constant(self.dfCharFreq.Frequency)),
+            default_value=-1)
 
     def _write(self, image, label):
         feature = {
@@ -211,8 +219,9 @@ class ClassifierDataset:
         return image, label
 
     def _augmenter(self,image, label):
-        p_augment = self.dfCharFreq[self.dfCharFreq['Unicode']== self.label_to_code[label.ref()]].probability.item()
-
+        
+        code = self.label_to_code.lookup(label)
+        p_augment = 1/self.code_to_freq[code]
         if np.random.rand()<p_augment:
             image = tf.image.random_brightness(image, max_delta=32.0 / 255.0)
             image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
@@ -225,10 +234,12 @@ class ClassifierDataset:
         """
         Returns the number of copies of given example
         """
-        pmap  = tf.io.parse_single_example(example, self.feature_description)
+   
+        pmap = tf.io.parse_single_example(example, self.feature_description)
         label = pmap['label']
-        code  = self.label_to_code[label.ref()]
-        class_prob = self.dfCharFreq[self.char_freq['Unicode']==code].Frequency.item()/self.char_freq.Frequency.su()
+
+        code  = self.label_to_code.lookup(label)
+        class_prob = self.code_to_freq[code]/self.dfCharFreq .Frequency.sum()
         class_target_prob = 1/4206
         prob_ratio = tf.cast(class_target_prob/class_prob, dtype=tf.float32)
         # soften ratio is oversampling_coef==0 we recover original distribution
@@ -253,12 +264,14 @@ class ClassifierDataset:
 
     def load(self):
         trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)
+    
         #Oversampling low frequency classes
-        # trainData = trainRecord.flat_map(lambda x: tf.data.Dataset.from_tensors(x).repeat(self.oversample_classes(x)))
+        trainData = trainRecord.flat_map(lambda x: tf.data.Dataset.from_tensors(x).repeat(self.oversample_classes(x)))
         trainData = trainRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        
         trainData = trainData.shuffle( buffer_size=self.config['classifierShufflingBufferSize'])
         #augmenter
-        # trainData = trainData.map(self._augmenter, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        trainData = trainData.map(self._augmenter, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
