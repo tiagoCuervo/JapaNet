@@ -186,7 +186,6 @@ class ClassifierDataset:
         self.dfTrain = self.dfTrain.sample(frac=1)
         self._trainWriter = tf.io.TFRecordWriter(self.trainRecordPath)
         self._validationWriter = tf.io.TFRecordWriter(self.validationRecordPath)
-        self.label_to_code = label_to_code
         for i in tqdm(range(len(self.dfTrain))):
             sample = self.dfTrain.iloc[i]
             imageBytes = self._processSample(sample)
