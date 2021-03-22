@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 dataPath = "./data"
-train_df = pd.read_csv(os.path.join(dataPath, "train.csv").replace("\\","/"))
-character_dict = pd.read_csv(os.path.join(dataPath, "unicode_translation.csv").replace("\\","/"))
+train_df = pd.read_csv(os.path.join(dataPath, "train.csv").replace("\\", "/"))
+character_dict = pd.read_csv(os.path.join(dataPath, "unicode_translation.csv").replace("\\", "/"))
 
 
-class JapChar():
+class JapChar:
     def __init__(self, char_data, im_id):
         self.char = char_data[0]
         self.x = int(char_data[1])
@@ -43,7 +43,7 @@ class ScripturePage:
         self.id = im_data[0]
         if type(im_data[1]) is not float:
             split_labels = im_data[1].split()
-            self.labels = [JapChar(split_labels[i: i+5], self.id)
+            self.labels = [JapChar(split_labels[i: i + 5], self.id)
                            for i in range(0, len(split_labels), 5)]
         else:
             self.labels = []
@@ -83,7 +83,7 @@ def make_classifier_data(data, crop_size=(64, 64)):
     for page in data:
         # counter to enumerate characters
         counter = 0
-        #open the respective image of the page
+        # open the respective image of the page
         im_page = page.get_im()
         id_page = page.id
         pages_checked.append(id_page)
@@ -102,10 +102,7 @@ def make_classifier_data(data, crop_size=(64, 64)):
     return pages_checked
 
 
-
-
 cropped_pages = make_classifier_data(data)
-
 
 # deleting extra characters not available in the unicode dictionary.
 ALL_CLASSES = set(np.load("./data/ALL_CLASSES.npy"))

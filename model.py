@@ -1,11 +1,9 @@
 from __future__ import print_function
 
-
 from hbconfig import Config
 import tensorflow as tf
 
 import concrete_model
-
 
 
 class Model:
