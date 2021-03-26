@@ -232,13 +232,10 @@ class ClassifierDataset:
             maxval=0.174533/2, dtype=tf.float32), fill_value = 1.0)
         return image, label
 
-    def oversample_classes(self,example, oversampling_coef=0.9):
+    def oversample_classes(self,image , label, oversampling_coef=0.9):
         """
         Returns the number of copies of given example
         """
-   
-        pmap = tf.io.parse_single_example(example, self.feature_description)
-        label = pmap['label']
 
         code  = self.label_to_code.lookup(label)
         class_prob = self.code_to_freq[code]/self.dfCharFreq .Frequency.sum()
@@ -260,16 +257,18 @@ class ClassifierDataset:
 
         residual_acceptance = tf.cast(residual_acceptance, tf.int64)
         repeat_count = tf.cast(repeat_count, dtype=tf.int64)
-
-        return repeat_count + residual_acceptance
+        
+        
+        return tf.data.Dataset.from_tensors((image, label)).repeat(repeat_count + residual_acceptance)
 
 
     def load(self):
-        trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)
-    
-        #Oversampling low frequency classes
-        trainData = trainRecord.flat_map(lambda x: tf.data.Dataset.from_tensors(x).repeat(self.oversample_classes(x)))
+        trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)    
         trainData = trainRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
+        #Oversampling low frequency classes
+        trainData = trainData.map(self.oversample_classes, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        trainData = trainData.flat_map(lambda x:x)
         
         trainData = trainData.shuffle( buffer_size=self.config['classifierShufflingBufferSize'])
         #augmenter
