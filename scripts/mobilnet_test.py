@@ -1,4 +1,4 @@
-'''
+
 from comet_ml import Experiment
 experiment = Experiment(
     api_key="vWqj2VRXub2HRuk5dzXl5yj3t",
@@ -6,7 +6,7 @@ experiment = Experiment(
     workspace="rcofre",
 )
 print("Logging experiment to COMET initialized")
-'''
+
 
 from dataloader import ClassifierDataset
 
@@ -50,13 +50,13 @@ import pandas as pd
 import numpy as np
 from tqdm.auto import tqdm
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Activation, Dense, AveragePooling2D, Dropout
+from tensorflow.keras.layers import Input, Activation, Dense, Dropout, Flatten
 from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.applications import MobileNetV3Large
 from tensorflow.keras.applications.mobilenet_v3 import preprocess_input as mobil_preprocess
 from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.losses import CategoricalCrossentropy
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
 
 n_classes = dataset.dfTrain['label'].nunique()
 
@@ -72,11 +72,11 @@ def create_model(n_classes, input_shape=(64, 64, 3)):
 
     base_model = tf.keras.applications.MobileNetV2(input_shape=input_shape,
                                                include_top=False,
-                                               weights='imagenet')
+                                               weights=None) # random weights initialization
 
-    x = base_model(x, training=False)
+    x = base_model(x)
 
-    x = AveragePooling2D(pool_size=x.shape[1:3])(x)
+    x = Flatten()(x)
 
     x = Dense(1280)(x)
 
@@ -88,8 +88,6 @@ def create_model(n_classes, input_shape=(64, 64, 3)):
 
     output = Activation('softmax')(x)
 
-    # TODO: convert from probabilities to classes!
-
     model = Model(input_layer, output)
 
     return model
@@ -100,18 +98,18 @@ checkpoint_dir = os.path.dirname(checkpoint_path)
 
 cp_callback = ModelCheckpoint(filepath=checkpoint_path,
                               save_weights_only=True,
-                              verbose=1)
+                              verbose=-1)
 
 mobilnet_model = create_model(n_classes)
 
-mobilnet_model.compile(loss=CategoricalCrossentropy(),
+mobilnet_model.compile(loss=SparseCategoricalCrossentropy(),
                        optimizer=Adam(lr=args.lr),
                        metrics='accuracy')
 
 history = mobilnet_model.fit(x = trainData,
                             epochs=args.n_epoch, 
                             validation_data=validationData,
-                            verbose = 1,
+                            verbose = -1,
                             callbacks=[cp_callback])
 
 mobilnet_model.save('./trained_models/mobilnet_model')
