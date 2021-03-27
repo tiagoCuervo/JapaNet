@@ -10,8 +10,7 @@ import random
 import os
 from pathlib import Path
 import tensorflow_addons as tfa
-
-
+import cv2
 
 
 def bytesFeature(value):
@@ -232,7 +231,34 @@ class ClassifierDataset:
             maxval=0.174533/2, dtype=tf.float32), fill_value = 1.0)
         return image, label
 
-    def oversample_classes(self,image , label, oversampling_coef=0.9):
+    def _binarizing(self, image, label):
+        img_0_orig = image*255.0
+        img_0 = cv2.cvtColor(img_0_orig, cv2.COLOR_RGB2BGR)
+        img_0 = cv2.cvtColor(img_0, cv2.COLOR_BGR2GRAY)
+        
+        blur = cv2.GaussianBlur(img_0, (1, 1), 0)
+        blur = np.array(blur, dtype= np.uint8)
+        sharp_mask = np.subtract(img_0, blur)
+        img_0 = cv2.addWeighted(img_0, 1, sharp_mask, 10, 0)
+        ret,th = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)   
+        kernel_1 = np.ones((3, 3), np.uint8)
+        kernel_2 = np.ones((1, 1), np.uint8)
+        opening = cv2.morphologyEx(th, cv2.MORPH_OPEN, kernel_1)
+        closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel_2)
+        
+        mask = cv2.cvtColor(closing, cv2.COLOR_GRAY2RGB)
+        img = cv2.add(img_0_orig, mask, dtype=cv2.CV_32F)
+        blur_1 = cv2.GaussianBlur(img, (13, 13), 0)
+        sharp_mask_1 = img - blur_1
+        sharp_mask_1 = cv2.GaussianBlur(sharp_mask_1, (7, 7), 0)
+        img = cv2.addWeighted(img, 1, sharp_mask_1, -10, 0, dtype=cv2.CV_32F)
+        
+        img = img/255.0
+        img = tf.clip_by_value(img, 0, 1)
+        
+        return img, label
+
+    def _oversample_classes(self,image , label, oversampling_coef=0.9):
         """
         Returns the number of copies of given example
         """
@@ -267,12 +293,15 @@ class ClassifierDataset:
         trainData = trainRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
         #Oversampling low frequency classes
-        trainData = trainData.map(self.oversample_classes, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        trainData = trainData.map(self._oversample_classes, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         trainData = trainData.flat_map(lambda x:x)
         
         trainData = trainData.shuffle( buffer_size=self.config['classifierShufflingBufferSize'])
         #augmenter
         trainData = trainData.map(self._augmenter, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        #binarizing
+        trainData = trainData.map(lambda x,y: tf.numpy_function(self._binarizing, [x,y], [tf.float32,tf.int64]), num_parallel_calls=tf.data.experimental.AUTOTUNE)
+
         trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
