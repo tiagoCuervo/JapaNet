@@ -19,6 +19,8 @@ import tensorflow.keras.backend as K
 import numpy as np
 import os
 import argparse
+import pandas as pd
+from time import time
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -114,6 +116,7 @@ def create_model(n_classes, input_shape = (64,64,3)):
 
     x = Dense(units = n_classes)(x)
     out = Softmax()(x)
+
     
     model = Model(input_layer,out)
     return model
@@ -136,7 +139,7 @@ def lrs(epoch):
 
 lr_schedule = LearningRateScheduler(lrs)
 
-checkpoint_path = "./trained_models/convnet_training/cp.ckpt"
+checkpoint_path = f"./trained_models/convnet_training/cp{time()}.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
 cp_callback = ModelCheckpoint(filepath=checkpoint_path,
@@ -149,37 +152,18 @@ cp_callback = ModelCheckpoint(filepath=checkpoint_path,
 cce_loss = tf.keras.losses.SparseCategoricalCrossentropy()
 
 
-#metric
-def recall_m(y_true, y_pred):
+df = pd.read_csv("data/char_freq.csv")
+label, unique = pd.factorize(df.Unicode)
+classes_weight = {key: value for key, value in zip(label, 100/df.Frequency)}
 
-    true_positives  =  tf.cast(tf.reduce_sum(tf.cast(tf.math.equal(tf.cast(tf.argmax(y_pred,0),tf.int64), tf.cast(y_true, tf.int64)), tf.int64)),tf.float32)
-    possible_positives = tf.cast(32, tf.float32)
-    recall = true_positives / (possible_positives + K.epsilon())
-    return recall
-
-
-def precision_m(y_true, y_pred):
-    true_positives = tf.cast(tf.reduce_sum(tf.cast(tf.math.equal(
-        tf.cast(tf.argmax(y_pred, 0), tf.int64), tf.cast(y_true, tf.int64)), tf.int64)), tf.float32)
-    predicted_positives = tf.cast(32, tf.float32)
-    precision = true_positives / (predicted_positives + K.epsilon())
-    return precision
-
-
-def f1_m(y_true, y_pred):
-    precision = precision_m(y_true, y_pred)
-    recall = recall_m(y_true, y_pred)
-    return 2*((precision*recall)/(precision+recall+K.epsilon()))
-
-
-
-def model_fit_(model, trainData, valData, n_epoch):
+def model_fit_(model, trainData, valData, n_epoch, class_w = None):
     hist = model.fit(
         trainData,
         epochs = n_epoch,
-        # validation_data=valData,
+        validation_data=valData,
         callbacks = [lr_schedule, cp_callback],
-        verbose = -1
+        verbose = -1,
+        class_weight = classes_w
     )
     return hist
 
@@ -187,8 +171,8 @@ def model_fit_(model, trainData, valData, n_epoch):
 learning_rate= args.lr
 n_epoch= args.n_epoch
 batch_size=32
-model.compile(loss=cce_loss, optimizer=Adam(lr=learning_rate), metrics = ['accuracy', f1_m, precision_m, recall_m])
-hist = model_fit_(model, trainData, validationData, 30)
+model.compile(loss=cce_loss, optimizer=Adam(lr=learning_rate), metrics = ['accuracy'])
+hist = model_fit_(model, trainData, validationData, 3)
 
 
 model.save('./trained_models/convnet_model')
