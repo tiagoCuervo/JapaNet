@@ -50,7 +50,7 @@ import pandas as pd
 import numpy as np
 from tqdm.auto import tqdm
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Activation, Dense, Dropout, Flatten
+from tensorflow.keras.layers import Input, Activation, Dense, Dropout, Flatten, BatchNormalization, LeakyReLU
 from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.applications import MobileNetV3Large
@@ -72,21 +72,29 @@ def create_model(n_classes, input_shape=(64, 64, 3)):
 
     base_model = tf.keras.applications.MobileNetV2(input_shape=input_shape,
                                                include_top=False,
+                                               pooling='avg',
                                                weights=None) # random weights initialization
 
-    x = base_model(x)
+    #base_model.trainable = True
 
-    x = Flatten()(x)
+    x = base_model(x, training=True)
+
+    #x = LeakyReLU(alpha=0.1)(x)
+
+    #x = Flatten()(x)
 
     x = Dense(1280)(x)
-
-    x = Activation('relu')(x)
-
+    x = BatchNormalization()(x)
+    # ^^^^^^^^^^ te linijke wyzej potencjalnie usun (albo wykomentuj uzywajac hasha)
+    x = LeakyReLU(alpha=0.1)(x)
     x = Dropout(rate=0.2)(x)
 
-    x = Dense(n_classes)(x)
+    x = Dense(1024)(x)
+    x = LeakyReLU(alpha=0.1)(x)
 
+    x = Dense(n_classes)(x)
     output = Activation('softmax')(x)
+
 
     model = Model(input_layer, output)
 
@@ -101,6 +109,7 @@ cp_callback = ModelCheckpoint(filepath=checkpoint_path,
                               verbose=-1)
 
 mobilnet_model = create_model(n_classes)
+print(mobilnet_model.summary())
 
 mobilnet_model.compile(loss=SparseCategoricalCrossentropy(),
                        optimizer=Adam(lr=args.lr),
