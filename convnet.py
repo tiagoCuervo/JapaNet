@@ -163,7 +163,7 @@ def model_fit_(model, trainData, valData, n_epoch, class_w = None):
         validation_data=valData,
         callbacks = [lr_schedule, cp_callback],
         verbose = -1,
-        class_weight = classes_w
+        class_weight = class_w
     )
     return hist
 

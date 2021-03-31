@@ -152,7 +152,7 @@ class ClassifierDataset:
         self.config = config
         self.trainRecordPath = 'data/train/train_classifier.tfrecord'
         self.validationRecordPath = 'data/train/validation_classifier.tfrecord'
-
+        
         self.feature_description = {
             'image': tf.io.FixedLenFeature([], dtype=tf.string),
             'label': tf.io.FixedLenFeature([], dtype=tf.int64)
@@ -167,10 +167,9 @@ class ClassifierDataset:
 
         # build a lookup table
         self.label_to_code = tf.lookup.StaticHashTable(
-            tf.lookup.KeyValueTensorInitializer(tf.constant(list(label_to_code_dict.keys()), dtype=tf.int64),
-                                                tf.constant(list(
-                                                    label_to_code_dict.values())), value_dtype=tf.string),
-            default_value='-1')
+        tf.lookup.KeyValueTensorInitializer(tf.constant(list(label_to_code_dict.keys()), dtype=tf.int64), tf.constant(list(
+            label_to_code_dict.values())), value_dtype=tf.string),
+        default_value='-1')
 
         # self.code_to_freq = {key: value for key,value in zip(self.dfCharFreq.Unicode,self.dfCharFreq.Frequency)}
         self.code_to_freq = tf.lookup.StaticHashTable(
@@ -184,16 +183,18 @@ class ClassifierDataset:
             'label': int64Feature(label)
         }
         sample = tf.train.Example(features=tf.train.Features(feature=feature))
-
+    
         if random.random() < self.config['validationFraction']:
             self._validationWriter.write(sample.SerializeToString())
         else:
             self._trainWriter.write(sample.SerializeToString())
+    
+    
 
     def _processSample(self, rawSample):
         image = Image.open("data/train_char/" + rawSample['unicode'] + "/" + rawSample['image_id'] + ".jpg")
         resizedImage = image.resize((self.config['classifierInputWidth'], self.config['classifierInputHeight']))
-        return image2Bytes(resizedImage)
+        return image2Bytes(resizedImage) 
 
     def createDataset(self):
 
@@ -214,59 +215,68 @@ class ClassifierDataset:
         pmap = tf.io.parse_single_example(example, self.feature_description)
         image = tf.image.decode_jpeg(pmap['image'], channels=3) / 255
         label = pmap['label']
+        
 
         return image, label
 
-    def _augmenter(self, image, label):
-
+    def _augmenter(self,image, label):
+        
         code = self.label_to_code.lookup(label)
-        p_augment = 1 / self.code_to_freq[code]
-        if np.random.rand() < p_augment:
+        p_augment = 1/self.code_to_freq[code]
+        if np.random.rand()<p_augment:
             image = tf.image.random_brightness(image, max_delta=32.0 / 255.0)
             image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
 
             image = tf.clip_by_value(image, 0.0, 1.0)
 
-            image = tfa.image.rotate(image, tf.random.uniform([], minval=-0.174533 / 2,
-                                                              maxval=0.174533 / 2, dtype=tf.float32), fill_value=1.0)
+            image = tfa.image.rotate(image, tf.random.uniform([], minval=-0.174533/2,
+            maxval=0.174533/2, dtype=tf.float32), fill_value = 1.0)
         return image, label
 
     def _binarizing(self, image, label):
-        img_0_orig = image * 255.0
+        img_0_orig = image*255.0
         img_0 = cv2.cvtColor(img_0_orig, cv2.COLOR_RGB2BGR)
         img_0 = cv2.cvtColor(img_0, cv2.COLOR_BGR2GRAY)
-
+        
         blur = cv2.GaussianBlur(img_0, (1, 1), 0)
-        blur = np.array(blur, dtype=np.uint8)
+        blur = np.array(blur, dtype= np.uint8)
         sharp_mask = np.subtract(img_0, blur)
         img_0 = cv2.addWeighted(img_0, 1, sharp_mask, 10, 0)
-        ret, th = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        ret,th = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)   
         kernel_1 = np.ones((3, 3), np.uint8)
         kernel_2 = np.ones((1, 1), np.uint8)
         opening = cv2.morphologyEx(th, cv2.MORPH_OPEN, kernel_1)
         closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel_2)
-
+        
         mask = cv2.cvtColor(closing, cv2.COLOR_GRAY2RGB)
         img = cv2.add(img_0_orig, mask, dtype=cv2.CV_32F)
         blur_1 = cv2.GaussianBlur(img, (13, 13), 0)
         sharp_mask_1 = img - blur_1
         sharp_mask_1 = cv2.GaussianBlur(sharp_mask_1, (7, 7), 0)
         img = cv2.addWeighted(img, 1, sharp_mask_1, -10, 0, dtype=cv2.CV_32F)
-
-        img = img / 255.0
+        
+        img = img/255.0
         img = tf.clip_by_value(img, 0, 1)
-
+        img = tf.convert_to_tensor(img, dtype=tf.float32)
+        
+        label = tf.convert_to_tensor(label, dtype = tf.int64)
+        
         return img, label
 
-    def _oversample_classes(self, image, label, oversampling_coef=0.9):
+    def _reset_shapes(self, image, label):
+        image.set_shape([64,64,3])
+        label.set_shape([])
+        return image, label
+
+    def _oversample_classes(self,image , label, oversampling_coef=0.9):
         """
         Returns the number of copies of given example
         """
 
-        code = self.label_to_code.lookup(label)
-        class_prob = self.code_to_freq[code] / self.dfCharFreq.Frequency.sum()
-        class_target_prob = 1 / 4206
-        prob_ratio = tf.cast(class_target_prob / class_prob, dtype=tf.float32)
+        code  = self.label_to_code.lookup(label)
+        class_prob = self.code_to_freq[code]/self.dfCharFreq .Frequency.sum()
+        class_target_prob = 1/4206
+        prob_ratio = tf.cast(class_target_prob/class_prob, dtype=tf.float32)
         # soften ratio is oversampling_coef==0 we recover original distribution
         prob_ratio = prob_ratio ** oversampling_coef
         # for classes with probability higher than class_target_prob we
@@ -283,24 +293,25 @@ class ClassifierDataset:
 
         residual_acceptance = tf.cast(residual_acceptance, tf.int64)
         repeat_count = tf.cast(repeat_count, dtype=tf.int64)
-
+        
+        
         return tf.data.Dataset.from_tensors((image, label)).repeat(repeat_count + residual_acceptance)
 
+
     def load(self):
-        trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)
+        trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)    
         trainData = trainRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
-        # Oversampling low frequency classes
+        #Oversampling low frequency classes
         trainData = trainData.map(self._oversample_classes, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        trainData = trainData.flat_map(lambda x: x)
-
-        trainData = trainData.shuffle(buffer_size=self.config['classifierShufflingBufferSize'])
-        # augmenter
+        trainData = trainData.flat_map(lambda x:x)
+        
+        trainData = trainData.shuffle( buffer_size=self.config['classifierShufflingBufferSize'])
+        #augmenter
         trainData = trainData.map(self._augmenter, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        # binarizing
-        trainData = trainData.map(lambda x, y: tf.numpy_function(self._binarizing, [x, y], [tf.float32, tf.int64]),
-                                  num_parallel_calls=tf.data.experimental.AUTOTUNE)
-
+        #binarizing
+        trainData = trainData.map(lambda x,y: tf.numpy_function(self._binarizing, [x,y], [tf.float32,tf.int64]), num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        trainData = trainData.map(self._reset_shapes, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
@@ -309,7 +320,6 @@ class ClassifierDataset:
         validationData = validationData.batch(self.config['batchSize'], drop_remainder=True)
         validationData = validationData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
         return trainData, validationData
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
