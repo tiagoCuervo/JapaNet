@@ -1,4 +1,5 @@
 from comet_ml import Experiment
+
 experiment = Experiment(
     api_key="XEXW8fsoCNViIiUNbIVQUphhm",
     project_name="japanet",
@@ -6,9 +7,9 @@ experiment = Experiment(
 )
 print("Logging experiment to COMET initialized")
 
-
 import tensorflow as tf
-from tensorflow.keras.layers import Input, Dense, Flatten, Conv2D, BatchNormalization, LeakyReLU,Conv2DTranspose, AveragePooling2D, Concatenate, Add, UpSampling2D, Activation, MaxPooling2D, Softmax, Dropout
+from tensorflow.keras.layers import Input, Dense, Flatten, Conv2D, BatchNormalization, LeakyReLU, Conv2DTranspose, \
+    AveragePooling2D, Concatenate, Add, UpSampling2D, Activation, MaxPooling2D, Softmax, Dropout
 from tensorflow.keras import Model
 from tensorflow.keras.optimizers import Adam
 import sys
@@ -22,6 +23,7 @@ import argparse
 import pandas as pd
 from time import time
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--lr', default=0.001, type=float,
@@ -33,13 +35,13 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
 args = parse_args()
 
 if args.gpu == 0:
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 from dataloader import ClassifierDataset
-
 
 datasetParams = {
     'identifierShufflingBufferSize': 100,
@@ -56,21 +58,21 @@ datasetParams = {
 dataset = ClassifierDataset(datasetParams)
 trainData, validationData = dataset.load()
 
-#input shape should come from datasetParams?
-def create_model(n_classes, input_shape = (64,64,3)):
-    
-    input_layer = Input(shape = input_shape)
+
+# input shape should come from datasetParams?
+def create_model(n_classes, input_shape=(64, 64, 3)):
+    input_layer = Input(shape=input_shape)
 
     x = Conv2D(filters=32, kernel_size=[5, 5], padding="same")(input_layer)
     x = BatchNormalization()(x)
     x = LeakyReLU(alpha=0.1)(x)
 
     # Input Shape: [batch_size, 64, 64, 32] -> Output Shape: [batch_size, 32, 32, 32]
-    
+
     x = MaxPooling2D(pool_size=[2, 2], strides=2)(x)
 
     # Input Shape: [batch_size, 32, 32, 32]-->Output Shape: [batch_size, 32, 32, 64]
-    
+
     x = Conv2D(filters=64, kernel_size=[5, 5], padding="same")(x)
     x = BatchNormalization()(x)
     x = LeakyReLU(alpha=0.1)(x)
@@ -92,7 +94,6 @@ def create_model(n_classes, input_shape = (64,64,3)):
     x = BatchNormalization()(x)
     x = LeakyReLU(alpha=0.1)(x)
 
-
     # Input Shape: [batch_size, 8, 8, 256]----> Output Shape: [batch_size, 4, 4, 256]
     x = MaxPooling2D(pool_size=[2, 2], strides=2)(x)
 
@@ -106,19 +107,18 @@ def create_model(n_classes, input_shape = (64,64,3)):
 
     # Input Shape: [batch_size, 2, 2, 512]----> Output Shape: [batch_size, 2 * 2 * 512]
     x = Flatten()(x)
-    x = Dense( units = 1024)(x)
+    x = Dense(units=1024)(x)
     x = LeakyReLU(alpha=0.1)(x)
     x = Dropout(0.25)(x)
 
-    x = Dense(units = 1024)(x)
+    x = Dense(units=1024)(x)
     x = LeakyReLU(alpha=0.1)(x)
     x = Dropout(0.25)(x)
 
-    x = Dense(units = n_classes)(x)
+    x = Dense(units=n_classes)(x)
     out = Softmax()(x)
 
-    
-    model = Model(input_layer,out)
+    model = Model(input_layer, out)
     return model
 
 
@@ -126,16 +126,17 @@ def create_model(n_classes, input_shape = (64,64,3)):
 n_classes = dataset.dfTrain['label'].nunique()
 model = create_model(n_classes)
 
-
 # Callbacks
 from tensorflow.keras.callbacks import LearningRateScheduler
 from tensorflow.keras.callbacks import ModelCheckpoint
 
+
 def lrs(epoch):
     lr = 0.001
-    if epoch >= 20: 
+    if epoch >= 20:
         lr = 0.0002
     return lr
+
 
 lr_schedule = LearningRateScheduler(lrs)
 
@@ -144,35 +145,32 @@ checkpoint_dir = os.path.dirname(checkpoint_path)
 
 cp_callback = ModelCheckpoint(filepath=checkpoint_path,
                               save_weights_only=True,
-                              verbose=-1, save_freq = 1000)
-
-
+                              verbose=-1, save_freq=1000)
 
 # loss
 cce_loss = tf.keras.losses.SparseCategoricalCrossentropy()
 
-
 df = pd.read_csv("data/char_freq.csv")
 label, unique = pd.factorize(df.Unicode)
-classes_weight = {key: value for key, value in zip(label, 100/df.Frequency)}
+classes_weight = {key: value for key, value in zip(label, 100 / df.Frequency)}
 
-def model_fit_(model, trainData, valData, n_epoch, class_w = None):
+
+def model_fit_(model, trainData, valData, n_epoch, class_w=None):
     hist = model.fit(
         trainData,
-        epochs = n_epoch,
+        epochs=n_epoch,
         validation_data=valData,
-        callbacks = [lr_schedule, cp_callback],
-        verbose = -1,
-        class_weight = class_w
+        callbacks=[lr_schedule, cp_callback],
+        verbose=-1,
+        class_weight=class_w
     )
     return hist
 
 
-learning_rate= args.lr
-n_epoch= args.n_epoch
-batch_size=32
-model.compile(loss=cce_loss, optimizer=Adam(lr=learning_rate), metrics = ['accuracy'])
+learning_rate = args.lr
+n_epoch = args.n_epoch
+batch_size = 32
+model.compile(loss=cce_loss, optimizer=Adam(lr=learning_rate), metrics=['accuracy'])
 hist = model_fit_(model, trainData, validationData, 3)
-
 
 model.save('./trained_models/convnet_model')

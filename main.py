@@ -1,100 +1,104 @@
-#-- coding: utf-8 -*-
-
 import argparse
-import atexit
-import logging
-
-from hbconfig import Config
-import tensorflow as tf
-from tensorflow.python import debug as tf_debug
-
-import data_loader
-from model import Model
-import hook
-import utils
-
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
+from tensorflow.keras.optimizers import Adam
+from keras.callbacks import LearningRateScheduler, ReduceLROnPlateau
+from tensorflow.keras.callbacks import ModelCheckpoint
+from model import CenterNet, ResNet18, ConvNetBaseline, centerNetLoss, heatMapLoss, sizeLoss, offsetLoss
+from dataloader import DetectorDataset, ClassifierDataset
+import datetime
+import json
+import numpy as np
+import pandas as pd
 
 
-def experiment_fn(run_config, params):
-
-    model = Model()
-    estimator = tf.estimator.Estimator(
-            model_fn=model.model_fn,
-            model_dir=Config.train.model_dir,
-            params=params,
-            config=run_config)
-
-    train_data, test_data = data_loader.make_train_and_test_set()
-    train_X, train_y = train_data
-    test_X, test_y = train_data
-
-    train_input_fn, train_input_hook = data_loader.make_batch(train_X, train_y,
-                                                              batch_size=Config.model.batch_size,
-                                                              scope="train")
-    test_input_fn, test_input_hook = data_loader.make_batch(test_X, test_y,
-                                                            batch_size=Config.model.batch_size,
-                                                            scope="test")
-
-    train_hooks = [train_input_hook]
-    if Config.train.print_verbose:
-        train_hooks.append(hook.print_variables(
-            variables=['train/input_0', 'train/target_0'],
-            every_n_iter=Config.train.check_hook_n_iter))
-    if Config.train.debug:
-        train_hooks.append(tf_debug.LocalCLIDebugHook())
-
-    eval_hooks = [test_input_hook]
-    if Config.train.debug:
-        eval_hooks.append(tf_debug.LocalCLIDebugHook())
-
-    experiment = tf.contrib.learn.Experiment(
-        estimator=estimator,
-        train_input_fn=train_input_fn,
-        eval_input_fn=test_input_fn,
-        train_steps=Config.train.train_steps,
-        min_eval_frequency=Config.train.min_eval_frequency,
-        train_monitors=train_hooks,
-        eval_hooks=eval_hooks
-    )
-    return experiment
+def trainDetector(setup):
+    with open('config.json') as fp:
+        dataConfig = json.load(fp)
+    dataset = DetectorDataset(dataConfig)
+    trainData, validationData = dataset.load()
+    centerNet = CenterNet([512, 512, 3], [3, 4, 6, 3], [64, 128, 256, 512], 1)
+    centerNet.model.compile(loss=centerNetLoss, optimizer=Adam(lr=setup.initLr),
+                            metrics=[heatMapLoss, sizeLoss, offsetLoss])
+    lrSchedule = ReduceLROnPlateau(monitor='loss', factor=setup.lrDecay, patience=setup.lrPatience,
+                                   min_lr=setup.minLr)
+    checkpointPath = "trained_models/detector.{epoch:02d}-{val_loss:.2f}.h5"
+    modelSavior = ModelCheckpoint(filepath=checkpointPath, save_best_only=True, save_freq='epoch')
+    try:
+        centerNet.model.fit(
+            trainData,
+            epochs=setup.numEpochs,
+            validation_data=validationData,
+            callbacks=[lrSchedule, modelSavior],
+            verbose=1
+        )
+    except KeyboardInterrupt:
+        centerNet.model.save('trained_models/detector_' + str(datetime.datetime.now()) + '.hdf5')
+        print('Last model saved')
+        pass
 
 
-def main(mode):
-    params = tf.contrib.training.HParams(**Config.model.to_dict())
+def trainClassifier(setup):
+    with open('config.json') as fp:
+        dataConfig = json.load(fp)
+    dataset = ClassifierDataset(dataConfig)
+    trainData, validationData = dataset.load()
 
-    run_config = tf.contrib.learn.RunConfig(
-            model_dir=Config.train.model_dir,
-            save_checkpoints_steps=Config.train.save_checkpoints_steps)
+    charDF = pd.read_csv('data/char_data.csv')
+    countsByClass = charDF.sort_values('Unicode_cat').Frequency.values
+    totalNumSamples = charDF['Frequency'].sum()
+    beta = (totalNumSamples - 1) / totalNumSamples
+    classWeights = pd.DataFrame((1 - beta) / (1 - beta ** countsByClass))
+    classWeights = classWeights.to_dict()[0]
+    probs = countsByClass / totalNumSamples
+    classifier = ResNet18([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
 
-    tf.contrib.learn.learn_runner.run(
-        experiment_fn=experiment_fn,
-        run_config=run_config,
-        schedule=mode,
-        hparams=params
-    )
+    classifier.model.compile(loss=SparseCategoricalCrossentropy(), optimizer=Adam(lr=setup.initLr),
+                             metrics=['accuracy'])
+    lrSchedule = ReduceLROnPlateau(monitor='loss', factor=setup.lrDecay, patience=setup.lrPatience,
+                                   min_lr=setup.minLr)
+    checkpointPath = "trained_models/classifier.{epoch:02d}-{val_loss:.2f}.h5"
+    modelSavior = ModelCheckpoint(filepath=checkpointPath, save_best_only=True, save_freq='epoch')
+    try:
+        classifier.model.fit(
+            trainData,
+            epochs=setup.numEpochs,
+            validation_data=validationData,
+            callbacks=[lrSchedule, modelSavior],
+            verbose=1,
+            class_weight=classWeights
+        )
+    except KeyboardInterrupt:
+        classifier.model.save('trained_models/classifier_' + str(datetime.datetime.now()) + '.hdf5')
+        print('Last model saved')
+        pass
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser(
-                        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--config', type=str, default='config',
-                        help='config file name')
-    parser.add_argument('--mode', type=str, default='train',
-                        help='Mode (train / test / train_and_evaluate / evalutate)')
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--mode', type=str, default='evaluate', help='config file name')
+    parser.add_argument('--numEpochs', type=int, default=100)
+    parser.add_argument('--initLr', type=float, default=0.01, help='Initial learning rate')
+    parser.add_argument('--lrDecay', type=float, default=0.75,
+                        help='Factor to which multiply learning rate at each training plateau')
+    parser.add_argument('--lrPatience', type=int, default=1,
+                        help='How many epochs to wait before decaying learning rate')
+    parser.add_argument('--minLr', type=float, default=1e-12, help='Minimum learning rate')
+    parser.add_argument('--detector', dest='detector', action='store_true')
+    parser.add_argument('--classifier', dest='classifier', action='store_true')
+    parser.set_defaults(detector=False)
+    parser.set_defaults(classifier=False)
     args = parser.parse_args()
 
-    tf.logging._logger.setLevel(logging.INFO)
+    if args.mode == 'train' or args.mode == 'train_and_evaluate':
+        if args.detector and not args.classifier:
+            print("Training detector")
+            trainDetector(args)
+        elif args['classifier'] and not args['detector']:
+            print("Training classifier")
+            trainClassifier(args)
+        else:
+            raise NotImplementedError
 
-    # Print Config setting
-    Config(args.config)
-    print("Config: ", Config)
-    if Config.get("description", None):
-        print("* Config Description")
-        for key, value in Config.description.items():
-            print(f" - {key}: {value}")
-
-    # After terminated Notification to Slack
-    atexit.register(utils.send_message_to_slack, config_name=args.config)
-
-    main(args.mode)
+    if args.mode == 'evaluate' or args.mode == 'train_and_evaluate':
+        raise NotImplementedError

@@ -36,10 +36,10 @@
 
     ```
     python scripts/download_dataset.py
-    python data_loader.py --identifier --config default
+    python data_loader.py --detector --config default
     ```
-    You should select the kind of model for which you intend to use the data with the flags ```--classifier``` or ```--identifier```. The parameters of the input pipeline should be specified in a config file in the folder ```./config``` (You can create your own set ups following the template specified in ```./config/default.py```).
+    You should select the kind of model for which you intend to use the data with the flags ```--classifier``` or ```--detector```. The parameters of the input pipeline should be specified in a config file in the folder ```./config``` (You can create your own set ups following the template specified in ```./config/default.py```).
     
 3. Finally, train and/or evaluate a model:
 
-    ```python main.py --identifier --config default --mode train_and_evaluate```
+    ```python main.py --detector --config default --mode train_and_evaluate```
