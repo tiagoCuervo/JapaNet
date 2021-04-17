@@ -12,7 +12,7 @@ import pandas as pd
 
 
 def trainDetector(setup):
-    with open('config.json') as fp:
+    with open('config/config.json') as fp:
         dataConfig = json.load(fp)
     dataset = DetectorDataset(dataConfig)
     trainData, validationData = dataset.load()
@@ -38,7 +38,7 @@ def trainDetector(setup):
 
 
 def trainClassifier(setup):
-    with open('config.json') as fp:
+    with open('config/config.json') as fp:
         dataConfig = json.load(fp)
     dataset = ClassifierDataset(dataConfig)
     trainData, validationData = dataset.load()
