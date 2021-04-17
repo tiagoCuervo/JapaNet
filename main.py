@@ -3,13 +3,12 @@ from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam
 from keras.callbacks import LearningRateScheduler, ReduceLROnPlateau
 from tensorflow.keras.callbacks import ModelCheckpoint
-from model import CenterNet, ResNet18, ConvNetBaseline, centerNetLoss, heatMapLoss, sizeLoss, offsetLoss
+from model import CenterNet, ResNet18, ConvNetBaseline, MobileNetV3, centerNetLoss, heatMapLoss, sizeLoss, offsetLoss
 from dataloader import DetectorDataset, _ClassifierDataset
 import datetime
 import json
 import numpy as np
 import pandas as pd
-
 
 def trainDetector(setup):
     with open('config/config.json') as fp:
@@ -51,7 +50,17 @@ def trainClassifier(setup):
     classWeights = pd.DataFrame((1 - beta) / (1 - beta ** countsByClass))
     classWeights = classWeights.to_dict()[0]
     probs = countsByClass / totalNumSamples
-    classifier = ResNet18([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
+
+    if setup.classifierName == 'ResNet18':
+        classifier = ResNet18([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
+
+    elif setup.classifierName == 'ConvNetBaseline':
+        classifier = ConvNetBaseline([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
+
+    elif setup.classifierName == 'MobileNetV3':
+        classifier = MobileNetV3([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
+    else:
+        raise NotImplementedError
 
     classifier.model.compile(loss=SparseCategoricalCrossentropy(), optimizer=Adam(lr=setup.initLr),
                              metrics=['accuracy'])
@@ -84,18 +93,26 @@ if __name__ == '__main__':
                         help='Factor to which multiply learning rate at each training plateau')
     parser.add_argument('--lrPatience', type=int, default=1,
                         help='How many epochs to wait before decaying learning rate')
+    parser.add_argument('--gpu', type=int, default=1,
+                        help='Whether to perform traning on GPU (1) or not (0), if available')
     parser.add_argument('--minLr', type=float, default=1e-12, help='Minimum learning rate')
+    parser.add_argument('--classifierName', type=str, default="ConvNetBaseline", 
+                        help="Classification model to train. Currently supporting ResNet18, ConvNetBaseline or MobileNetV3. " \
+                        "Use only with the --classifier flag")
     parser.add_argument('--detector', dest='detector', action='store_true')
     parser.add_argument('--classifier', dest='classifier', action='store_true')
     parser.set_defaults(detector=False)
     parser.set_defaults(classifier=False)
     args = parser.parse_args()
 
+    if args.gpu == 0:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
     if args.mode == 'train' or args.mode == 'train_and_evaluate':
         if args.detector and not args.classifier:
             print("Training detector")
             trainDetector(args)
-        elif args['classifier'] and not args['detector']:
+        elif args.classifier and not args.detector:
             print("Training classifier")
             trainClassifier(args)
         else:

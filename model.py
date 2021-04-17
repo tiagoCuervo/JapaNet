@@ -2,6 +2,8 @@ import tensorflow as tf
 from tensorflow.keras.layers import Input, Dense, Conv2D, BatchNormalization, LeakyReLU, Softmax, Conv2DTranspose, \
     Concatenate, Add, AveragePooling2D, GlobalAveragePooling2D, Activation, MaxPool2D, Flatten, Dropout
 from tensorflow.keras import Model
+from tensorflow.keras.applications import MobileNetV3Large
+from tensorflow.keras.applications.mobilenet_v3 import preprocess_input as mobil_preprocess
 import keras.backend as K
 import numpy as np
 
@@ -243,6 +245,38 @@ class ConvNetBaseline:
         if self.outputBias is not None:
             self.outputBias = tf.keras.initializers.Constant(self.outputBias)
         x = Dense(self.numClasses, bias_initializer=self.outputBias)(x)
+        x = Softmax()(x)
+
+        return Model(inputLayer, x)
+
+
+class MobileNetV3:
+    def __init__(self, inputShape, numClasses=None, outputBias=None):
+        self.inputShape = inputShape
+        self.numClasses = numClasses
+        self.outputBias = outputBias
+        self.model = None
+
+    def buildModel(self):
+        inputLayer = Input(shape=self.inputShape)
+
+        x = mobil_preprocess(inputLayer * 255)
+
+        base_model = tf.keras.applications.MobileNetV3Large(input_shape=self.inputShape,
+                                                            include_top=False,
+                                                            pooling='avg',
+                                                            weights=None) # random weights initialization
+        x = base_model(x, training=True)
+
+        x = Dense(units=1024)(x)
+        x = BatchNormalization()(x)
+        x = LeakyReLU(alpha=0.1)(x)
+        x = Dropout(rate=0.25)(x)
+
+
+        if self.outputBias is not None:
+            self.outputBias = tf.keras.initializers.Constant(self.outputBias)
+        x = Dense(units=self.numClasses, bias_initializer=self.outputBias)(x)
         x = Softmax()(x)
 
         return Model(inputLayer, x)
