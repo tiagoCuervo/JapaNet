@@ -220,11 +220,11 @@ class _ClassifierDataset:
         trainData = trainRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         trainData = trainData.map(classifierAugmenter, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         trainData = trainData.shuffle(buffer_size=self.config['classifierShufflingBufferSize'])
-        trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
+        trainData = trainData.batch(self.config['batchSizeClassifier'], drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
         validationRecord = tf.data.TFRecordDataset(self.validationRecordPath)
         validationData = validationRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        validationData = validationData.batch(self.config['batchSize'], drop_remainder=True)
+        validationData = validationData.batch(self.config['batchSizeClassifier'], drop_remainder=True)
         validationData = validationData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
         return trainData, validationData
 
@@ -448,7 +448,7 @@ if __name__ == '__main__':
         DetectorDataset(args).createDataset()
     elif args['classifier'] and not args['detector']:
         print("Creating classifier dataset")
-        ClassifierDataset(args).createDataset()
+        _ClassifierDataset(args).createDataset()
     else:
         print("Creating detector dataset")
         DetectorDataset(args).createDataset()
