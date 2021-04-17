@@ -35,8 +35,8 @@ def int64Feature(value):
 class DetectorDataset:
     def __init__(self, setup):
         self.config = setup
-        self.trainRecordPath = 'data/train/detector_train.tfrecord'
-        self.validationRecordPath = 'data/train/detector_validation.tfrecord'
+        self.trainRecordPath = 'data/detector_train.tfrecord'
+        self.validationRecordPath = 'data/detector_validation.tfrecord'
         self.feature_description = {
             'image': tf.io.FixedLenFeature([], dtype=tf.string),
             'labels': tf.io.FixedLenFeature([128 * 128 * 5], dtype=tf.float32),
@@ -286,8 +286,8 @@ def _reset_shapes(image, label):
 class ClassifierDataset:
     def __init__(self, setup):
         self.config = setup
-        self.trainRecordPath = 'data/train/train_classifier.tfrecord'
-        self.validationRecordPath = 'data/train/validation_classifier.tfrecord'
+        self.trainRecordPath = 'data/train_classifier.tfrecord'
+        self.validationRecordPath = 'data/validation_classifier.tfrecord'
 
         self.feature_description = {
             'image': tf.io.FixedLenFeature([], dtype=tf.string),
