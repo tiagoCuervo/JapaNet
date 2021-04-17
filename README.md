@@ -1,11 +1,25 @@
-# Segmentation and classification of ancient Japanese characters
+# Segmentation and classification of ancient Japanese Kuzushiji characters
 
-## Requirements
+# Table of Contents
+
+- [Aim](#aim)
+- [Requirements](#requirments)
+- [Project Architecture](#project-architecture)
+- [Main Components](#main-components)
+- [Experiment Modes](#experiment-modes)
+- [Suggested Usage](#suggested-usage)
+- [Results](#results)
+
+# Aim
+
+The aim of this project
+
+# Requirements
 
 - Python 3.8
 - TensorFlow 2.0
 
-## Project Structure
+# Project Architecture
 
     .
     ├── config/                 # Config files
@@ -18,7 +32,11 @@
     ├── model.py                # Defines model      
     └── utils.py                # Miscelaneus useful functions
 
-## Experiments mode
+
+# Main Components
+
+
+# Experiment Modes
 
 - `evaluate` : Evaluate on the evaluation data.
 - `test` : Tests training, evaluating and exporting the estimator for a single step.
@@ -26,7 +44,9 @@
 - `train_and_evaluate` : Interleaves training and evaluation.
 
 
-## Usage
+# Suggested Usage
+
+The suggested usage of the project's resources available here is as follows
 
 1. Install requirements.
 
@@ -43,3 +63,5 @@
 3. Finally, train and/or evaluate a model:
 
     ```python main.py --detector --config default --mode train_and_evaluate```
+
+# Results
