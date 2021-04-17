@@ -1,7 +1,9 @@
-PIL
+Pillow
+opencv-python
 tqdm
 numpy
 pandas
 requests
+keras
 tensorflow==2.4.0
 tensorflow-addons
