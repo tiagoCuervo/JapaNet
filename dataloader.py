@@ -126,14 +126,14 @@ class DetectorDataset:
     def load(self):
         trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)
         trainData = trainRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        trainData = trainData.shuffle(buffer_size=self.config['shufflingBufferSize'])
-        trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
+        trainData = trainData.shuffle(buffer_size=self.config['detectorShufflingBufferSize'])
+        trainData = trainData.batch(self.config['batchSizeDetector'], drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
         trainData = trainData.filter(
             lambda x, y: not tf.reduce_any(tf.math.is_nan(x)) and not tf.reduce_any(tf.math.is_nan(y)))
         validationRecord = tf.data.TFRecordDataset(self.validationRecordPath)
         validationData = validationRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        validationData = validationData.batch(self.config['batchSize'], drop_remainder=True)
+        validationData = validationData.batch(self.config['batchSizeDetector'], drop_remainder=True)
         validationData = validationData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
         validationData = validationData.filter(
             lambda x, y: not tf.reduce_any(tf.math.is_nan(x)) and not tf.reduce_any(tf.math.is_nan(y)))
