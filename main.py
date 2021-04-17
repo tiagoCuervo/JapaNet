@@ -4,7 +4,7 @@ from tensorflow.keras.optimizers import Adam
 from keras.callbacks import LearningRateScheduler, ReduceLROnPlateau
 from tensorflow.keras.callbacks import ModelCheckpoint
 from model import CenterNet, ResNet18, ConvNetBaseline, centerNetLoss, heatMapLoss, sizeLoss, offsetLoss
-from dataloader import DetectorDataset, ClassifierDataset
+from dataloader import DetectorDataset, _ClassifierDataset
 import datetime
 import json
 import numpy as np
@@ -32,7 +32,7 @@ def trainDetector(setup):
             verbose=1
         )
     except KeyboardInterrupt:
-        centerNet.model.save('trained_models/detector_' + str(datetime.datetime.now()) + '.hdf5')
+        centerNet.model.save('trained_models/detector_' + str(datetime.datetime.now()).split(' ')[0] + '.hdf5')
         print('Last model saved')
         pass
 
@@ -40,13 +40,14 @@ def trainDetector(setup):
 def trainClassifier(setup):
     with open('config/config.json') as fp:
         dataConfig = json.load(fp)
-    dataset = ClassifierDataset(dataConfig)
+    dataset = _ClassifierDataset(dataConfig)
     trainData, validationData = dataset.load()
 
     charDF = pd.read_csv('data/char_data.csv')
     countsByClass = charDF.sort_values('Unicode_cat').Frequency.values
     totalNumSamples = charDF['Frequency'].sum()
-    beta = (totalNumSamples - 1) / totalNumSamples
+    # beta = (totalNumSamples - 1) / totalNumSamples
+    beta = 0.999
     classWeights = pd.DataFrame((1 - beta) / (1 - beta ** countsByClass))
     classWeights = classWeights.to_dict()[0]
     probs = countsByClass / totalNumSamples
@@ -68,7 +69,7 @@ def trainClassifier(setup):
             class_weight=classWeights
         )
     except KeyboardInterrupt:
-        classifier.model.save('trained_models/classifier_' + str(datetime.datetime.now()) + '.hdf5')
+        classifier.model.save('trained_models/classifier_' + str(datetime.datetime.now()).split(' ')[0] + '.hdf5')
         print('Last model saved')
         pass
 

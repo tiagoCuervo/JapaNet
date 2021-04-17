@@ -213,8 +213,7 @@ class _ClassifierDataset:
         imageResized = tf.image.resize(imageDecoded, [self.config['classifierInputWidth'],
                                                       self.config['classifierInputHeight']])
         label = pmap['label']
-        # probability = pmap['probability']
-        return imageResized / 255.0, label  # , probability * self.charDF['Frequency'].sum()
+        return imageResized / 255.0, label
 
     def load(self):
         trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)
@@ -427,7 +426,7 @@ if __name__ == '__main__':
                         help='If there is enough memory should be greater or equal to the number of samples')
     parser.add_argument('--classifierShufflingBufferSize', type=int, default=2 ** 17,
                         help='If there is enough memory should be greater or equal to the number of samples')
-    parser.add_argument('--batchSizeDetector', type=int, default=128)
+    parser.add_argument('--batchSizeDetector', type=int, default=32)
     parser.add_argument('--batchSizeClassifier', type=int, default=4096)
     parser.add_argument('--detectorInputHeight', type=int, default=512)
     parser.add_argument('--detectorInputWidth', type=int, default=512)
@@ -454,7 +453,7 @@ if __name__ == '__main__':
         print("Creating detector dataset")
         DetectorDataset(args).createDataset()
         print("Creating classifier dataset")
-        ClassifierDataset(args).createDataset()
+        _ClassifierDataset(args).createDataset()
     print("Saving setup")
     with open('config/config.json', 'w') as fp:
         json.dump(args, fp)
