@@ -86,13 +86,14 @@ class DetectorDataset:
             label[yCenter, xCenter, 4] = yOffset[i].astype('float32')
         return label
 
-    def _processSample(self, rawSample):
+    def _processSample(self, rawSample, zipObject):
         # Resizes image, gets its JPEG compressed data, and computes the new bounding boxes after resizing
-        image = Image.open("data/train/" + rawSample['image_id'] + ".jpg")
-        originalWidth = image.size[0]
-        originalHeight = image.size[1]
-        resizedImage = image.resize((self.config['detectorInputWidth'], self.config['detectorInputHeight']))
-        imageBytes = image2Bytes(resizedImage)
+        image = tf.image.decode_jpeg(zipObject.read(rawSample['image_id'] + ".jpg"))
+        originalWidth = image.shape[1]
+        originalHeight = image.shape[0]
+        resizedImage = tf.image.resize(image,
+                                       [self.config['detectorInputWidth'], self.config['detectorInputHeight']])
+        imageBytes = tf.image.encode_jpeg(tf.cast(resizedImage, tf.uint8)).numpy()
         # Creates label (heatmap, xSize, ySize, xOffset, yOffset)
         label = self._createLabel(rawSample['labels'], originalWidth / self.config['detectorInputWidth'],
                                   originalHeight / self.config['detectorInputHeight'])
@@ -100,11 +101,12 @@ class DetectorDataset:
 
     def createDataset(self):
         dfTrain = pd.read_csv('data/train.csv')
+        zipObject = ZipFile('data/train_images.zip', 'r')
         self._trainWriter = tf.io.TFRecordWriter(self.trainRecordPath)
         self._validationWriter = tf.io.TFRecordWriter(self.validationRecordPath)
         for i in tqdm(range(len(dfTrain))):
             sample = dfTrain.iloc[i]
-            imageBytes, label, originalWidth, originalHeight = self._processSample(sample)
+            imageBytes, label, originalWidth, originalHeight = self._processSample(sample, zipObject)
             self._write(imageBytes, label, originalWidth, originalHeight)
         self._trainWriter.flush()
         self._trainWriter.close()
@@ -138,7 +140,7 @@ class DetectorDataset:
         return trainData, validationData
 
 
-def _augmenter(image, label):
+def classifierAugmenter(image, label):
     if random.random() < 0.5:
         image = tf.image.random_brightness(image, max_delta=32.0 / 255.0)
         image = tf.image.random_saturation(image, lower=0.5, upper=1.5)
@@ -152,8 +154,8 @@ def _augmenter(image, label):
 class _ClassifierDataset:
     def __init__(self, config):
         self.config = config
-        self.trainRecordPath = 'data/train/classifier_train.tfrecord'
-        self.validationRecordPath = 'data/train/classifier_validation.tfrecord'
+        self.trainRecordPath = 'data/classifier_train.tfrecord'
+        self.validationRecordPath = 'data/classifier_validation.tfrecord'
         self.feature_description = {
             'image': tf.io.FixedLenFeature([], dtype=tf.string),
             'label': tf.io.FixedLenFeature([], dtype=tf.int64),
@@ -217,7 +219,7 @@ class _ClassifierDataset:
     def load(self):
         trainRecord = tf.data.TFRecordDataset(self.trainRecordPath)
         trainData = trainRecord.map(self._processExample, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-        trainData = trainData.map(_augmenter, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+        trainData = trainData.map(classifierAugmenter, num_parallel_calls=tf.data.experimental.AUTOTUNE)
         trainData = trainData.shuffle(buffer_size=self.config['classifierShufflingBufferSize'])
         trainData = trainData.batch(self.config['batchSize'], drop_remainder=True)
         trainData = trainData.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
