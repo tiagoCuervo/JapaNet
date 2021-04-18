@@ -124,7 +124,7 @@ The model hyperparameters should be supplied through appropriate flags. See --he
 
 - [2] *Kuzushiji Recognition*, URL: https://www.kaggle.com/c/kuzushiji-recognition/data, last accessed 18.04.2021
 
-- [3] K.Duan et al. *CenterNet: Keypoint Triplets for Object Detection*, Computer Vision and Pattern Recognition (2019)
+- [3] Zhou et al. *Objects as Points*, https://arxiv.org/abs/1904.07850 (2019)
 
 - [4] He, Kaiming et al. *Deep residual learning for image recognition*, Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2016)
 
