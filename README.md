@@ -7,11 +7,11 @@
 - [Repository Structure](#repository-structure)
 - [Project Architecture](#project-architecture)
 - [Main Components](#main-components)
-  - [download_data.py](#download_data.py)
-  - [dataloader.py](#dataloader.py)
-  - [model.py](#model.py)
-  - [main.py](#main.py)
-  - [utils.py](#utils.py)
+  - [download_data](#download_data)
+  - [dataloader](#dataloader)
+  - [model](#model)
+  - [main](#main)
+  - [utils](#utils)
 - [Suggested Usage](#suggested-usage)
 - [Results](#results)
 - [References](#references)
@@ -53,11 +53,11 @@ Data for the project has been taken from the Kaggle competition[2] aimed at impr
 
 # Main Components
 
-## download_data.py
+## download_data
 
 Script for downloading the data available on Kaggle website[2]. Zip files are downloaded directly to the data/ directory.
 
-## dataloader.py
+## dataloader
 
 Script for unpacking the zipped data and creating TensorFlow.records input pipelines for the detection and classification tasks, as well as the config json file to be used later by `main.py`. Users need to specify the kind of model for which they intend to use the data using the flags (names are self-explanatory):
 
@@ -66,11 +66,11 @@ Script for unpacking the zipped data and creating TensorFlow.records input pipel
 
 `data_loader.py` has a set of default parameters to be saved in the config file, but accepts custom values through the appropriate flags. See --help for more information.
 
-## model.py
+## model
 
 Script containing the detection and classification models used in `main.py`. 
 
-## main.py
+## main
 
 Script for running the detection and classification experiments. At the moment, detection is performed using the CenterNet model only. For classification, users can use the `--classifierName` flag to choose one of the currently supported models: ConvNetBaseline (custom default), ResNet18[3] or MobileNetV3 Large[4].
 
