@@ -20,11 +20,7 @@
 
 The main goal of this project has been to develop a model (models) that would perform detection and classification of ancient Japanese characters (Kuzushiji cursive script), in which classification consists of mapping the Kuzushiji characters to their modern Japanese counterparts. 
 
-<div align="center">
-
-<img align="center" width="600" src="https://github.com/tiagoCuervo/JapaNet/tree/main/figures/boxes.png?raw=true">
-
-</div>
+![](https://github.com/tiagoCuervo/JapaNet/tree/main/figures/boxes.png)
 
 The main motivation behind the project choice has been to utilize the artificial intelligence tools to contribute to a wider ongoing research aimed at making ancient Japanese culture and history more available to people[1]. Sources written in Kuzushiji cannot be read nor appreciated without appropriate translation by anyone except only a small number of experts. Being able to make the ancient Japanese heritage more accessible to a wider public seemed like a fantastic real-life application of Machine Learning.
 
@@ -51,12 +47,7 @@ Data for the project has been taken from the Kaggle competition[2] aimed at impr
     
 
 # Project Architecture
-
-<div align="center">
-
-<img align="center" width="600" src="https://github.com/tiagoCuervo/JapaNet/tree/main/figures/arch.png?raw=true">
-
-</div>
+![](https://github.com/tiagoCuervo/JapaNet/tree/main/figures/arch.png)
 
 
 # Main Components
