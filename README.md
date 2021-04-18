@@ -11,7 +11,6 @@
   - [dataloader.py](#dataloader.py)
   - [model.py](#model.py)
   - [main.py](#main.py)
-  - [utils.py](#utils.py)
 - [Suggested Usage](#suggested-usage)
 - [Results](#results)
 - [References](#references)
