@@ -79,10 +79,6 @@ The following modes are accepted for both tasks through the `--mode` flag:
 - `train` : Fit the estimator using the training data.
 - `train_and_evaluate` : Interleaves training and evaluation.
 
-## utils
-
-Script containing miscellaneous utility functions.
-
 # Suggested Usage
 
 The suggested usage of the project's resources available here is as follows (the users are however free to use them at their will):
