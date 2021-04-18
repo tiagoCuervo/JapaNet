@@ -7,19 +7,21 @@
 - [Repository Structure](#repository-structure)
 - [Project Architecture](#project-architecture)
 - [Main Components](#main-components)
-  - [download_data.py](#download_data.py)
-  - [dataloader.py](#dataloader.py)
-  - [model.py](#model.py)
-  - [main.py](#main.py)
+    - [download_data.py](#download_data.py)
+    - [dataloader.py](#dataloader.py)
+    - [model.py](#model.py)
+    - [main.py](#main.py)
 - [Suggested Usage](#suggested-usage)
 - [Results](#results)
+    - [Detection](#detection)
+    - [Classification](#classification) 
 - [References](#references)
 
 # Aim
 
 The main goal of this project has been to develop a model (models) that would perform detection and classification of ancient Japanese characters (Kuzushiji cursive script), in which classification consists of mapping the Kuzushiji characters to their modern Japanese counterparts. 
 
-![](./figures/boxes.png?raw=true)
+
 
 The main motivation behind the project choice has been to utilize artificial intelligence tools to contribute to a wider ongoing research aimed at making ancient Japanese culture and history more available to people[1]. Sources written in Kuzushiji cannot be read nor appreciated without appropriate translation by anyone except only a small number of experts. Being able to make the ancient Japanese heritage more accessible to a wider public seemed like a fantastic real-life application of Machine Learning.
 
@@ -110,6 +112,25 @@ The model hyperparameters should be supplied through appropriate flags. See --he
 
 # Results
 
+## Detection
+
+Below we present sample images showing the results of our experiments regarding the detection task.
+
+![Learning curves from the CenterNet detection model](./figures/centernet_curves.png?raw=true)
+
+![Positions of characters on sample page predicted by CenterNet](./figures/positions.png?raw=true)
+
+![Bounding Boxes generated with CenterNet](./figures/boxes.png?raw=true)
+
+
+
+## Classification
+
+Below we present sample images showing the results of our experiments regarding the classification task.
+
+![Learning curves from the ConvNetBaseline classification model](./figures/convnet_curves.png?raw=true)
+
+![Learning curves from uniweighted ResNet18 classification model](./figures/resnet_unweighted.png?raw=true)
 
 
 # References
@@ -118,8 +139,8 @@ The model hyperparameters should be supplied through appropriate flags. See --he
 
 - [2] *Kuzushiji Recognition*, URL: https://www.kaggle.com/c/kuzushiji-recognition/data, last accessed 18.04.2021
 
-- [3] Zhou et al. *Objects as Points*, https://arxiv.org/abs/1904.07850 (2019)
+- [3] Zhou et al. ![*Objects as Points*](https://arxiv.org/abs/1904.07850), 	Computer Vision and Pattern Recognition (2019)
 
-- [4] He, Kaiming et al. *Deep residual learning for image recognition*, Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2016)
+- [4] He, Kaiming et al. ![*Deep residual learning for image recognition*](https://arxiv.org/abs/1512.03385), Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2016)
 
-- [5] A. Howard et al, *Searching for MobileNetV3*, IEEE/CVF International Conference on Computer Vision (ICCV) (2019)
+- [5] A. Howard et al, ![*Searching for MobileNetV3*](https://arxiv.org/abs/1905.02244), IEEE/CVF International Conference on Computer Vision (ICCV) (2019)
