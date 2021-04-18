@@ -42,8 +42,7 @@ Data for the project has been taken from the Kaggle competition[2] aimed at impr
     ├── dataloader.py           # Data reader, preprocessing, batch iterator
     ├── download_dataset.py     # Data downloader
     ├── main.py                 # Running an experiment (different modes below)
-    ├── model.py                # Defines model 
-    └── utils.py                # Miscelaneus useful functions
+    └── model.py                # Defines model
     
 
 # Project Architecture
