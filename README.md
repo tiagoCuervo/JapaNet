@@ -22,7 +22,7 @@ The main goal of this project has been to develop a model (models) that would pe
 
 <div align="center">
 
-<img align="center" width="600" src="https://github.com/tiagoCuervo/JapaNet/tree/main/figures/boxes.png?raw=true"">
+<img align="center" width="600" src="https://github.com/tiagoCuervo/JapaNet/tree/main/figures/boxes.png?raw=true">
 
 </div>
 
@@ -54,7 +54,7 @@ Data for the project has been taken from the Kaggle competition[2] aimed at impr
 
 <div align="center">
 
-<img align="center" width="600" src="https://github.com/tiagoCuervo/JapaNet/tree/main/figures/arch.png?raw=true"">
+<img align="center" width="600" src="https://github.com/tiagoCuervo/JapaNet/tree/main/figures/arch.png?raw=true">
 
 </div>
 
