@@ -10,6 +10,7 @@ import json
 import numpy as np
 import pandas as pd
 
+
 def trainDetector(setup):
     with open('config/config.json') as fp:
         dataConfig = json.load(fp)

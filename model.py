@@ -260,6 +260,9 @@ class MobileNetV3:
         self.outputBias = outputBias
         self.model = self.buildModel()
 
+    def predict(self, x):
+        return self.model.predict(x)
+
     def buildModel(self):
         inputLayer = Input(shape=self.inputShape)
 
