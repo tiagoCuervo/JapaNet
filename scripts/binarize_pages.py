@@ -130,33 +130,3 @@ def make_bw_pages(data):
     return pages_checked
 
 bw_pages = make_bw_pages(data)
-
-
-''' 
-WORK IN PROGRESS
-def make_bw_classifier_data(data, crop_size=(64, 64)):
-
-    pages_checked = []
-    print("Starting cropping")
-    for page in tqdm(data):
-        # counter to enumerate characters
-        counter = 0
-        #open the respective image of the page
-        bin_page = page_binarizer(page.get_file())
-        im_page = PIL.Image.fromarray(bin_page)
-        id_page = page.id
-        pages_checked.append(id_page)
-        for char in page.labels:
-            # cropping the respective character
-            im_char = im_page.crop(
-                char.get_top_left() + char.get_bottom_right())
-            # resizing
-            im_char = im_char.resize(crop_size)
-            # saving character image
-            os.makedirs(f"./data/bw_train_char/{char.char}", exist_ok=True)
-            im_char.save(f"./data/bw_train_char/{char.char}/{id_page}_{counter}.jpg")
-
-            counter += 1
-    print("All pages checked!")
-    return pages_checked
-'''
