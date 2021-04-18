@@ -1,4 +1,4 @@
-# Segmentation and classification of ancient Japanese Kuzushiji characters
+# Detection and classification of ancient Japanese Kuzushiji characters
 
 # Table of Contents
 
@@ -22,7 +22,7 @@ The main goal of this project has been to develop a model (models) that would pe
 
 ![](./figures/boxes.png?raw=true)
 
-The main motivation behind the project choice has been to utilize the artificial intelligence tools to contribute to a wider ongoing research aimed at making ancient Japanese culture and history more available to people[1]. Sources written in Kuzushiji cannot be read nor appreciated without appropriate translation by anyone except only a small number of experts. Being able to make the ancient Japanese heritage more accessible to a wider public seemed like a fantastic real-life application of Machine Learning.
+The main motivation behind the project choice has been to utilize artificial intelligence tools to contribute to a wider ongoing research aimed at making ancient Japanese culture and history more available to people[1]. Sources written in Kuzushiji cannot be read nor appreciated without appropriate translation by anyone except only a small number of experts. Being able to make the ancient Japanese heritage more accessible to a wider public seemed like a fantastic real-life application of Machine Learning.
 
 Data for the project has been taken from the Kaggle competition[2] aimed at improving the current models developed for Kuzushiji recognition. 
 
