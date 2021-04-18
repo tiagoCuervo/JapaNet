@@ -64,7 +64,7 @@ Script for unpacking the zipped data and creating TensorFlow.records input pipel
 - `--detector`
 - `--classifier`
 
-`data_loader.py` has a set of default parameters to be saved in the config file, but accepts custom values through the appropriate flags. See --help for more information.
+`dataloader.py` has a set of default parameters to be saved in the config file, but accepts custom values through the appropriate flags. See --help for more information.
 
 ## model
 
