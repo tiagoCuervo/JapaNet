@@ -185,7 +185,10 @@ class ConvNetBaseline:
         self.inputShape = inputShape
         self.numClasses = numClasses
         self.outputBias = outputBias
-        self.model = None
+        self.model = self.buildModel()
+
+    def predict(self, x):
+        return self.model.predict(x)
 
     def buildModel(self):
         inputLayer = Input(shape=self.inputShape)
@@ -255,7 +258,7 @@ class MobileNetV3:
         self.inputShape = inputShape
         self.numClasses = numClasses
         self.outputBias = outputBias
-        self.model = None
+        self.model = self.buildModel()
 
     def buildModel(self):
         inputLayer = Input(shape=self.inputShape)
@@ -265,14 +268,13 @@ class MobileNetV3:
         base_model = tf.keras.applications.MobileNetV3Large(input_shape=self.inputShape,
                                                             include_top=False,
                                                             pooling='avg',
-                                                            weights=None) # random weights initialization
+                                                            weights=None)  # random weights initialization
         x = base_model(x, training=True)
 
         x = Dense(units=1024)(x)
         x = BatchNormalization()(x)
         x = LeakyReLU(alpha=0.1)(x)
         x = Dropout(rate=0.25)(x)
-
 
         if self.outputBias is not None:
             self.outputBias = tf.keras.initializers.Constant(self.outputBias)
