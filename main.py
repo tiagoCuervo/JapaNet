@@ -1,14 +1,18 @@
 import argparse
+# import tensorflow as tf
 from tensorflow.keras.losses import SparseCategoricalCrossentropy
 from tensorflow.keras.optimizers import Adam
-from keras.callbacks import LearningRateScheduler, ReduceLROnPlateau
+from tensorflow.keras.callbacks import LearningRateScheduler, ReduceLROnPlateau
 from tensorflow.keras.callbacks import ModelCheckpoint
-from model import CenterNet, ResNet18, ConvNetBaseline, MobileNetV3, centerNetLoss, heatMapLoss, sizeLoss, offsetLoss
+from model import CenterNet, ResNet18, ResNet34, ConvNetBaseline, MobileNetV3, centerNetLoss, heatMapLoss, sizeLoss, \
+    offsetLoss
 from dataloader import DetectorDataset, _ClassifierDataset
 import datetime
 import json
 import numpy as np
 import pandas as pd
+import os
+# from pathlib import Path
 
 
 def trainDetector(setup):
@@ -54,10 +58,10 @@ def trainClassifier(setup):
 
     if setup.classifierName == 'ResNet18':
         classifier = ResNet18([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
-
+    elif setup.classifierName == 'ResNet34':
+        classifier = ResNet34([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
     elif setup.classifierName == 'ConvNetBaseline':
         classifier = ConvNetBaseline([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
-
     elif setup.classifierName == 'MobileNetV3':
         classifier = MobileNetV3([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
     else:
@@ -84,6 +88,54 @@ def trainClassifier(setup):
         pass
 
 
+# def trainClassifier2(setup, path2Model):
+#     with open('config/config.json') as fp:
+#         dataConfig = json.load(fp)
+#     dataset = _ClassifierDataset(dataConfig)
+#     trainData, validationData = dataset.load()
+#
+#     charDF = pd.read_csv('data/char_data.csv')
+#     countsByClass = charDF.sort_values('Unicode_cat').Frequency.values
+#     totalNumSamples = charDF['Frequency'].sum()
+#     # beta = (totalNumSamples - 1) / totalNumSamples
+#     beta = 0.999
+#     classWeights = pd.DataFrame((1 - beta) / (1 - beta ** countsByClass))
+#     classWeights = classWeights.to_dict()[0]
+#     probs = countsByClass / totalNumSamples
+#
+#     # if setup.classifierName == 'ResNet18':
+#     #     classifier = ResNet18([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
+#     # elif setup.classifierName == 'ResNet34':
+#     #     classifier = ResNet34([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
+#     # elif setup.classifierName == 'ConvNetBaseline':
+#     #     classifier = ConvNetBaseline([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
+#     # elif setup.classifierName == 'MobileNetV3':
+#     classifier = MobileNetV3([64, 64, 3], numClasses=4206, outputBias=np.log(probs))
+# # else:
+# #     raise NotImplementedError
+#     classifier.model = tf.keras.models.load_model(path2Model)
+#
+#     classifier.model.compile(loss=SparseCategoricalCrossentropy(), optimizer=Adam(lr=0.01 * 0.75**3),
+#                              metrics=['accuracy'])
+#     lrSchedule = ReduceLROnPlateau(monitor='loss', factor=setup.lrDecay, patience=setup.lrPatience,
+#                                    min_lr=setup.minLr)
+#     checkpointPath = "trained_models/classifier_2.{epoch:02d}-{val_loss:.2f}.h5"
+#     modelSavior = ModelCheckpoint(filepath=checkpointPath, save_best_only=True, save_freq='epoch')
+#     try:
+#         classifier.model.fit(
+#             trainData,
+#             epochs=setup.numEpochs,
+#             validation_data=validationData,
+#             callbacks=[lrSchedule, modelSavior],
+#             verbose=1,
+#             class_weight=classWeights
+#         )
+#     except KeyboardInterrupt:
+#         classifier.model.save('trained_models/classifier_2_' + str(datetime.datetime.now()).split(' ')[0] + '.hdf5')
+#         print('Last model saved')
+#         pass
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -96,15 +148,18 @@ if __name__ == '__main__':
                         help='How many epochs to wait before decaying learning rate')
     parser.add_argument('--gpu', type=int, default=1,
                         help='Whether to perform traning on GPU (1) or not (0), if available')
-    parser.add_argument('--minLr', type=float, default=1e-12, help='Minimum learning rate')
-    parser.add_argument('--classifierName', type=str, default="ConvNetBaseline", 
-                        help="Classification model to train. Currently supporting ResNet18, ConvNetBaseline or MobileNetV3. " \
-                        "Use only with the --classifier flag")
+    parser.add_argument('--minLr', type=float, default=1e-4, help='Minimum learning rate')
+    parser.add_argument('--classifierName', type=str, default="ConvNetBaseline",
+                        help="Classification model to train. Currently supporting ResNet18, ResNet34, ConvNetBaseline"
+                             " or MobileNetV3. Use only with the --classifier flag")
     parser.add_argument('--detector', dest='detector', action='store_true')
     parser.add_argument('--classifier', dest='classifier', action='store_true')
     parser.set_defaults(detector=False)
     parser.set_defaults(classifier=False)
     args = parser.parse_args()
+
+    # paths = sorted(Path('trained_models').iterdir(), key=os.path.getmtime)
+    # trainClassifier2(args, paths[-1])
 
     if args.gpu == 0:
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"

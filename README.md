@@ -33,7 +33,12 @@ Data for the project has been taken from the Kaggle competition[2] aimed at impr
 # Requirements
 
 - Python 3.8
-- TensorFlow 2.0
+- tqdm
+- pandas
+- requests
+- Tensorflow 2.4
+- tensorflow-addons
+
 
 # Repository Structure
 
@@ -70,7 +75,7 @@ Script for unpacking the zipped data and creating TensorFlow.records input pipel
 
 ## model.py
 
-Script containing the detection and classification models used in `main.py`. At the moment, detection is performed using the CenterNet[3] model only. For classification, users can use the `--classifierName` flag to choose one of the currently supported models: ConvNetBaseline (custom default), ResNet18[4] or MobileNetV3 Large[5].
+Script containing the detection and classification models used in `main.py`. At the moment, detection is performed using the CenterNet[3] model only. For classification, users can use the `--classifierName` flag to choose one of the currently supported models: ConvNetBaseline (custom default), ResNet(18 or 34)[4] or MobileNetV3 Large[5].
 
 ## main.py
 
@@ -111,26 +116,29 @@ The suggested usage of the project's resources available here is as follows (the
     python main.py --detector --mode train --numEpochs 20 --gpu 1 --minLr 1e-4
     ```
     
-The model hyperparameters should be supplied through appropriate flags. See --help for more information.
+The model hyperparameters should be supplied through appropriate flags. Use --help for more information.
 
-# Results
+# Models
 
 ## Detection
 
 Below we present sample images showing the results of our experiments regarding the detection task.
 
-- learaning curves obtained from the training process of the CenterNet detection model:
+- Learning curves obtained from the training process of the CenterNet detection model:
 ![Learning curves from the CenterNet detection model](./figures/centernet_curves.png?raw=true)
 
-- predicted positions of Kuzushiji characters on a sample page obtained from the trained CenterNet:
+The model was trained for over 150 epochs with a batch size of 1024 using the Adam optimizer. We applied a reduce on plateau learning rate schedule starting from 0.01, and cyclical learning restarting about every 60 epochs.
+
+- Examples of the input and first three output channels from the trained CenterNet:
 
 ![Positions of characters on sample page predicted by CenterNet](./figures/positions.png?raw=true)
 
-- predicted bounding boxes obtained from the trained CenterNet:
+The first channel is a heat map of the predicted center of the character. The brightness of the dots in the second and third channel is proportional to the predicted size of the object horizontally and vertically, respectively.
+- Predicted bounding boxes obtained from the trained CenterNet:
 
 ![Bounding Boxes generated with CenterNet](./figures/boxes.png?raw=true)
 
-**TODO brief results?**
+Overall, the model performs nicely for small and close to average characters (left. Bear in mind that the small anotations on the sides of the columns are meant to be ignored by the model), but as can be seen (right), it can fail for unusually large characters (right), as these were rather uncommon on the train set.
 
 ## Classification
 
@@ -145,38 +153,40 @@ The baseline convolutional neural network we have developed for the classificati
 
 Training of the baseline convolutional net has been performed with a constant learning rate of 0.001, sparse categorical cross-entropy loss, Adam optimizer, batch size of 512 and 20 epochs.
 
-**TODO brief results?**
-
-- sample learning curves obtained from the Baseline Convolutional classification model:
+- Sample learning curves obtained from the Baseline Convolutional classification model:
 
 ![Learning curves from the ConvNetBaseline classification model](./figures/convnet_curves.png?raw=true)
 
 
 ### ResNet18
 
-Aside from our own simple baseline model, we have tried utlizing the well known ResNet model, more specifically the ResNet18[4] architecture. The model has been implemented by hand using the constituent *convBatchReLU* blocks and *residualBlocks*[4].
+Aside from our own simple baseline model, we have tried using the well known ResNet model, more specifically the ResNet18 architecture. The model has been implemented by hand. The training process was performed with a reduce on plateau learning rate schedule, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and 100 epochs.
 
-**TODO**: The training process has been performed with a *reduce-on-plateau* learning schedule, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and 100 epochs.
-
-**TODO brief results?**
-
-- sample learning curves obtained from the ResNet18 classification model:
+- Sample learning curves obtained from the ResNet18 classification model:
 
 ![Learning curves from the uniweighted ResNet18 classification model](./figures/resnet_unweighted.png?raw=true)
 
 
 ### MobileNetV3
 
-The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer (units=1024) followed by batch normalization, leaky ReLU (alpha=0.1) and dropout (rate=0.25) layers before the final output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a random initialization of model weights, *reduce-on-plateau* learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and 100 epochs.
+The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer (units=1024) followed by batch normalization, leaky ReLU (alpha=0.1) and dropout (rate=0.25) layers before the final output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a random initialization of model weights, *reduce-on-plateau* learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 4096 and 100 epochs. For this model we additionally used the class weighting scheme described in [6] to try to counter the considerable class imbalance present in the data set.
 
-**brief results?**
-
-- sample learning curves obtained from the MobilenetV3 classification model:
+- Sample learning curves obtained from the MobilenetV3 classification model:
 
 **image with learning curves**
 
 
 - **TODO table with results here?**
+
+# Results
+
+The following are the results of evaluating the F1 score using the union of the detection and classification model:
+
+| Model            	| F1 Score 	|
+|------------------	|----------	|
+| Convnet baseline 	| 0.7994   	|
+| ResNet18         	| 0.5647   	|
+| MobileNet        	|          	|
 
 # References
 
@@ -189,3 +199,5 @@ The core of the MobileNetV3 Large[5] model available in the keras.applications p
 - [4] He, Kaiming et al. [*Deep residual learning for image recognition*](https://arxiv.org/abs/1512.03385), Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2016)
 
 - [5] A. Howard et al, [*Searching for MobileNetV3*](https://arxiv.org/abs/1905.02244), IEEE/CVF International Conference on Computer Vision (ICCV) (2019)
+
+- [6] Cui, Y., Jia, M., Lin, T.-Y., Song, Y., and Belongie, S., [*Class-Balanced Loss Based on Effective Number of Samples*](https://arxiv.org/abs/1901.05555), <i>arXiv e-prints</i>, 2019.

@@ -4,7 +4,7 @@ from tensorflow.keras.layers import Input, Dense, Conv2D, BatchNormalization, Le
 from tensorflow.keras import Model
 from tensorflow.keras.applications import MobileNetV3Large
 from tensorflow.keras.applications.mobilenet_v3 import preprocess_input as mobil_preprocess
-import keras.backend as K
+import tensorflow.keras.backend as K
 import numpy as np
 
 
@@ -268,10 +268,10 @@ class MobileNetV3:
 
         x = mobil_preprocess(inputLayer * 255)
 
-        base_model = tf.keras.applications.MobileNetV3Large(input_shape=self.inputShape,
-                                                            include_top=False,
-                                                            pooling='avg',
-                                                            weights=None)  # random weights initialization
+        base_model = MobileNetV3Large(input_shape=self.inputShape,
+                                      include_top=False,
+                                      pooling='avg',
+                                      weights=None)  # random weights initialization
         x = base_model(x, training=True)
 
         x = Dense(units=1024)(x)

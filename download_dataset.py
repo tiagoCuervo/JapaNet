@@ -1,8 +1,4 @@
 import requests
-import os
-from pathlib import Path
-import platform
-import zipfile
 
 
 def download_file_from_google_drive(gdriveID, destination):
@@ -56,26 +52,3 @@ if __name__ == "__main__":
     for out, fileID in zip(outputs, googleFilesID):
         download_file_from_google_drive(fileID, out)
     print('Download Complete!')
-    print('Uncompressing files ...')
-    dataDir = os.path.join(Path(__file__).parent.parent, 'data')
-
-    osName = platform.system()
-    if osName == 'Linux':
-        os.system(f"unzip \"{os.path.join(dataDir, 'train.zip')}\" -d \"{os.path.join(dataDir, 'train')}\"")
-        os.system(f"unzip \"{os.path.join(dataDir, 'test.zip')}\" -d \"{os.path.join(dataDir, 'test')}\"")
-        os.system(f"unzip \"{os.path.join(dataDir, 'train_char.zip')}\" -d \"{os.path.join(dataDir, 'train_char')}\"")
-        os.system(f"rm \"{os.path.join(dataDir, 'train_.zip')}\"")
-        os.system(f"rm \"{os.path.join(dataDir, 'test.zip')}\"")
-        os.system(f"rm \"{os.path.join(dataDir, 'train_char.zip')}\"")
-    elif osName == 'Windows':
-        with zipfile.ZipFile(outputTrainImages, 'r') as zipRef:
-            zipRef.extractall("./data/train")
-        with zipfile.ZipFile(outputTestImages, 'r') as zipRef:
-            zipRef.extractall("./data/test")
-        with zipfile.ZipFile(outputTrainChar, 'r') as zipRef:
-            zipRef.extractall("./data/train_char")
-        os.system(f"del {os.path.join(dataDir, 'train_char.zip')}")
-        os.system(f"del {os.path.join(dataDir, 'train.zip')}")
-        os.system(f"del {os.path.join(dataDir, 'test.zip')}")
-
-    print('All done! :D')
