@@ -186,6 +186,13 @@ The following are the results of evaluating the F1 score using the union of the 
 | ResNet18         	| 0.5647   	|
 | MobileNet        	|          	|
 
+Trained models are available for download at the following links:
+
+- [CenterNet](https://drive.google.com/file/d/12u0bbY1u3Odaijab4SLtUmQMPx_ZOWbD/view)
+- [ConvBaseline](https://drive.google.com/file/d/1sNq5rJF6cakcSII8QRg6o7kXQMUb6V82/view?usp=sharing)
+- [ResNet18](https://drive.google.com/file/d/10oi6K265-fArTQwilK9UdA3VdK3fMtio/view)
+- [MobilNetV3](https://drive.google.com/file/d/1wHlt1tV9V_viSNwETN10-VihFP4FE52d/view)
+
 # References
 
 - [1] A. Lamb, *How Machine Learning Can Help Unlock the World of Ancient Japan*, The Gradient https://thegradient.pub/machine-learning-ancient-japan/ (2019), last accessed 15.03.2021
