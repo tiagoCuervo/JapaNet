@@ -103,7 +103,7 @@ def trainClassifier(setup):
         classifier.model.save('trained_models/classifier_' + str(datetime.datetime.now()).split(' ')[0] + '.hdf5')
         print('Last model saved')
         pass
-    
+
 
 def evaluateModel(setup):
     assert setup.classifierPath is not None and setup.detectorPath is not None

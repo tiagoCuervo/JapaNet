@@ -1,5 +1,3 @@
 __pycache__
 /venv/*
 /.idea/*
-*.csv
-F1_score_eval.py
