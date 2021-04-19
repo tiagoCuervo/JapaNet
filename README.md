@@ -184,7 +184,7 @@ The following are the results of evaluating the F1 score using the union of the 
 |------------------	|----------	|
 | Convnet baseline 	| 0.7994   	|
 | ResNet18         	| 0.5647   	|
-| MobileNet        	|          	|
+| MobileNet        	| 0.7756    |
 
 Trained models are available for download at the following links:
 
