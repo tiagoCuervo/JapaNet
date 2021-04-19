@@ -130,6 +130,7 @@ Below we present sample images showing the results of our experiments regarding 
 
 ![Bounding Boxes generated with CenterNet](./figures/boxes.png?raw=true)
 
+**TODO brief results?**
 
 ## Classification
 
@@ -144,7 +145,7 @@ The baseline convolutional neural network we have developed for the classificati
 
 Training of the baseline convolutional net has been performed with a constant learning rate of 0.001, sparse categorical cross-entropy loss, Adam optimizer, batch size of 512 and 20 epochs.
 
-**brief results?**
+**TODO brief results?**
 
 - sample learning curves obtained from the Baseline Convolutional classification model:
 
@@ -153,9 +154,11 @@ Training of the baseline convolutional net has been performed with a constant le
 
 ### ResNet18
 
-The core of the MobileNetV3 Large with an additional dense layer of size 1024 before the output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a *reduce-on-plateau* learning schedule, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and 100 epochs.
+Aside from our own simple baseline model, we have tried utlizing the well known ResNet model, more specifically the ResNet18[4] architecture. The model has been implemented by hand using the constituent *convBatchReLU* blocks and *residualBlocks*[4].
 
-**brief results?**
+**TODO**: The training process has been performed with a *reduce-on-plateau* learning schedule, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and 100 epochs.
+
+**TODO brief results?**
 
 - sample learning curves obtained from the ResNet18 classification model:
 
@@ -173,7 +176,7 @@ The core of the MobileNetV3 Large[5] model available in the keras.applications p
 **image with learning curves**
 
 
-- **table with results here?**
+- **TODO table with results here?**
 
 # References
 
