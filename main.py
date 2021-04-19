@@ -46,9 +46,9 @@ def trainDetector(setup):
             verbose=1
         )
     except KeyboardInterrupt:
-        centerNet.model.save('trained_models/detector_' + str(datetime.datetime.now()).split(' ')[0] + '.hdf5')
-        print('Last model saved')
         pass
+    centerNet.model.save('trained_models/detector_' + str(datetime.datetime.now()).split(' ')[0] + '.hdf5')
+    print('Last model saved')
 
 
 def trainClassifier(setup):
@@ -100,9 +100,9 @@ def trainClassifier(setup):
             class_weight=classWeights
         )
     except KeyboardInterrupt:
-        classifier.model.save('trained_models/classifier_' + str(datetime.datetime.now()).split(' ')[0] + '.hdf5')
-        print('Last model saved')
         pass
+    classifier.model.save('trained_models/classifier_' + str(datetime.datetime.now()).split(' ')[0] + '.hdf5')
+    print('Last model saved')
 
 
 def evaluateModel(setup):
