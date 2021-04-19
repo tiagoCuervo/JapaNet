@@ -172,7 +172,7 @@ class CenterNet(ResNet):
                     i, detectedIdxs[j, 0], detectedIdxs[j, 1]] / 2
                 boxes[j, 2] = boxes[j, 0] + sHatY[i, detectedIdxs[j, 0], detectedIdxs[j, 1]]
                 boxes[j, 3] = boxes[j, 1] + sHatX[i, detectedIdxs[j, 0], detectedIdxs[j, 1]]
-            boxes = boxes / 512.0
+            boxes = boxes / self.inputShape[0]
             selectedIndices = tf.image.non_max_suppression(boxes, scores, max_output_size=detectedIdxs.shape[0],
                                                            iou_threshold=ioUThreshold,
                                                            score_threshold=confidenceThreshold)
