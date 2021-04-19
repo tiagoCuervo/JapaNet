@@ -169,7 +169,9 @@ Aside from our own simple baseline model, we have tried using the well known Res
 
 ### MobileNetV3
 
-The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer (units=1024) followed by batch normalization, leaky ReLU (alpha=0.1) and dropout (rate=0.25) layers before the final output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a random initialization of model weights, *reduce-on-plateau* learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 4096 and 100 epochs. For this model we additionally used the class weighting scheme described in [6] to try to counter the considerable class imbalance present in the data set.
+The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer (units=1024) followed by batch normalization, leaky ReLU (alpha=0.1) and dropout (rate=0.25) layers before the final output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. 
+
+The training process has been performed with a random initialization of model weights, *reduce-on-plateau* learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 4096 and 100 epochs. For this model we additionally used the class weighting scheme described in [6] to try to counter the considerable class imbalance present in the data set.
 
 - Sample learning curves obtained from the MobilenetV3 classification model:
 
