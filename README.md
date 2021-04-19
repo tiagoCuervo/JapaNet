@@ -47,8 +47,8 @@ Data for the project has been taken from the Kaggle competition[2] aimed at impr
     
 
 # Project Architecture
-![Simplified architecture of the project](./figures/arch.png?raw=true)
 
+![Simplified architecture of the project](./figures/arch.png?raw=true)
 
 # Main Components
 
@@ -128,20 +128,44 @@ Below we present sample images showing the results of our experiments regarding 
 ![Bounding Boxes generated with CenterNet](./figures/boxes.png?raw=true)
 
 
-
 ## Classification
 
 Below we present sample images showing the results of our experiments regarding the classification task.
+
+### Baseline ConvNet
+
+Training of the baseline convolutional net has been performed with a constant learning rate of 0.001, sparse categorical cross-entropy loss, Adam optimizer, batch size of 512 and for 20 epochs.
+
+**brief results?**
 
 - sample learning curves obtained from the Baseline Convolutional classification model:
 
 ![Learning curves from the ConvNetBaseline classification model](./figures/convnet_curves.png?raw=true)
 
+
+### ResNet18
+
+The core of the MobileNetV3 Large with an additional dense layer of size 1024 before the output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a *reduce-on-plateau* learning schedule, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and for 100 epochs.
+
+**brief results?**
+
 - sample learning curves obtained from the ResNet18 classification model:
 
-![Learning curves from uniweighted ResNet18 classification model](./figures/resnet_unweighted.png?raw=true)
+![Learning curves from the uniweighted ResNet18 classification model](./figures/resnet_unweighted.png?raw=true)
 
-- **table with results here**
+
+### MobileNetV3
+
+The core of the MobileNetV3 Large[5] with an additional dense layer of size 1024 before the output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a *reduce-on-plateau* learning schedule, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and for 100 epochs
+
+**brief results?**
+
+- sample learning curves obtained from the MobilenetV3 classification model:
+
+**image with learning curves**
+
+
+- **table with results here?**
 
 # References
 
