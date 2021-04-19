@@ -137,7 +137,12 @@ Below we present sample images showing the results of our experiments regarding 
 
 ### Baseline ConvNet
 
-Training of the baseline convolutional net has been performed with a constant learning rate of 0.001, sparse categorical cross-entropy loss, Adam optimizer, batch size of 512 and for 20 epochs.
+The baseline convolutional neural network we have developed for the classification task has the following architecture:
+
+![Baseline Convolutional Model Architecture](./figures/baseline_arch.png?raw=true)
+
+
+Training of the baseline convolutional net has been performed with a constant learning rate of 0.001, sparse categorical cross-entropy loss, Adam optimizer, batch size of 512 and 20 epochs.
 
 **brief results?**
 
@@ -148,7 +153,7 @@ Training of the baseline convolutional net has been performed with a constant le
 
 ### ResNet18
 
-The core of the MobileNetV3 Large with an additional dense layer of size 1024 before the output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a *reduce-on-plateau* learning schedule, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and for 100 epochs.
+The core of the MobileNetV3 Large with an additional dense layer of size 1024 before the output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a *reduce-on-plateau* learning schedule, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and 100 epochs.
 
 **brief results?**
 
@@ -159,7 +164,7 @@ The core of the MobileNetV3 Large with an additional dense layer of size 1024 be
 
 ### MobileNetV3
 
-The core of the MobileNetV3 Large[5] with an additional dense layer of size 1024 before the output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a *reduce-on-plateau* learning schedule, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and for 100 epochs
+The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer ($units=1024$) followed by batch normalization, leaky ReLU ($\alpha=0.1$) and dropout ($rate=0.25$) layers before the final output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a random initialization of model weights, *reduce-on-plateau* learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and 100 epochs.
 
 **brief results?**
 
