@@ -174,7 +174,7 @@ The training process has been performed with a random initialization of model we
 
 - Sample learning curves obtained from the MobilenetV3 classification model:
 
-**TODO image with learning curves**
+![Learning curves from the MobileNetV3 Large classification model](./figures/mobil_curves.png?raw=true)
 
 # Results
 
@@ -192,10 +192,10 @@ The following are the results of evaluating the F1 score using the union of the 
 
 - [2] *Kuzushiji Recognition*, URL: https://www.kaggle.com/c/kuzushiji-recognition/data, last accessed 18.04.2021
 
-- [3] Zhou et al. [*Objects as Points*](https://arxiv.org/abs/1904.07850), 	Computer Vision and Pattern Recognition (2019)
+- [3] Zhou et al., [*Objects as Points*](https://arxiv.org/abs/1904.07850), Computer Vision and Pattern Recognition (2019)
 
-- [4] He, Kaiming et al. [*Deep residual learning for image recognition*](https://arxiv.org/abs/1512.03385), Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2016)
+- [4] He et al., [*Deep residual learning for image recognition*](https://arxiv.org/abs/1512.03385), Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2016)
 
-- [5] A. Howard et al, [*Searching for MobileNetV3*](https://arxiv.org/abs/1905.02244), IEEE/CVF International Conference on Computer Vision (ICCV) (2019)
+- [5] Howard et al., [*Searching for MobileNetV3*](https://arxiv.org/abs/1905.02244), IEEE/CVF International Conference on Computer Vision (ICCV) (2019)
 
-- [6] Cui, Y., Jia, M., Lin, T.-Y., Song, Y., and Belongie, S., [*Class-Balanced Loss Based on Effective Number of Samples*](https://arxiv.org/abs/1901.05555), <i>arXiv e-prints</i>, 2019.
+- [6] Cui et al., [*Class-Balanced Loss Based on Effective Number of Samples*](https://arxiv.org/abs/1901.05555), Computer Vision and Pattern Recognition (2019)
