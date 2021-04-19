@@ -206,7 +206,7 @@ if __name__ == '__main__':
     if args.gpu == 0:
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-    if args.mode == 'train' or args.mode == 'train_and_evaluate':
+    if args.mode == 'train':
         if args.detector and not args.classifier:
             print("Training detector")
             trainDetector(args)
@@ -214,7 +214,10 @@ if __name__ == '__main__':
             print("Training classifier")
             trainClassifier(args)
         else:
-            raise NotImplementedError
-
-    if args.mode == 'evaluate' or args.mode == 'train_and_evaluate':
+            print("Training detector")
+            trainDetector(args)
+            print("Training classifier")
+            trainClassifier(args)
+    elif args.mode == 'evaluate':
+        print("Evaluating model")
         evaluateModel(args)
