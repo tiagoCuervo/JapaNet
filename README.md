@@ -167,7 +167,7 @@ Aside from our own simple baseline model, we have tried utlizing the well known 
 
 ### MobileNetV3
 
-The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer ($units=1024$) followed by batch normalization, leaky ReLU ($\alpha=0.1$) and dropout ($rate=0.25$) layers before the final output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a random initialization of model weights, *reduce-on-plateau* learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and 100 epochs.
+The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer (units=1024) followed by batch normalization, leaky ReLU (alpha=0.1) and dropout (rate=0.25) layers before the final output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. The training process has been performed with a random initialization of model weights, *reduce-on-plateau* learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and 100 epochs.
 
 **brief results?**
 
