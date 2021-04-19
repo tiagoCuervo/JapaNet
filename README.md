@@ -12,19 +12,18 @@
     - [model.py](#model.py)
     - [main.py](#main.py)
 - [Suggested Usage](#suggested-usage)
-- [Results](#results)
+- [Models](#models)
     - [Detection](#detection)
     - [Classification](#classification) 
         - [Baseline ConvNet](#baseline-convnet)
         - [ResNet18](#resnet18)
         - [MobileNetV3](#mobilenetv3)
+- [Results](#results)
 - [References](#references)
 
 # Aim
 
 The main goal of this project has been to develop a model (models) that would perform detection and classification of ancient Japanese characters (Kuzushiji cursive script), in which classification consists of mapping the Kuzushiji characters to their modern Japanese counterparts. 
-
-
 
 The main motivation behind the project choice has been to utilize artificial intelligence tools to contribute to a wider ongoing research aimed at making ancient Japanese culture and history more available to people[1]. Sources written in Kuzushiji cannot be read nor appreciated without appropriate translation by anyone except only a small number of experts. Being able to make the ancient Japanese heritage more accessible to a wider public seemed like a fantastic real-life application of Machine Learning.
 
@@ -169,20 +168,17 @@ Aside from our own simple baseline model, we have tried using the well known Res
 
 ### MobileNetV3
 
-The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer (units=1024) followed by batch normalization, leaky ReLU (alpha=0.1) and dropout (rate=0.25) layers before the final output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. 
+The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer (units=1024) followed by batch normalization, leaky ReLU (alpha=0.1) and dropout (rate=0.25) layers before the final output layer with a suitable number of outputs (4206) has been used for the purposes of our experiments. 
 
-The training process has been performed with a random initialization of model weights, *reduce-on-plateau* learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 4096 and 100 epochs. For this model we additionally used the class weighting scheme described in [6] to try to counter the considerable class imbalance present in the data set.
+The training process has been performed with a random initialization of model weights, reduce on plateau learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 4096 and 100 epochs. For this model we additionally used the class weighting scheme described in [6] to try to counter the considerable class imbalance present in the data set.
 
 - Sample learning curves obtained from the MobilenetV3 classification model:
 
-**image with learning curves**
-
-
-- **TODO table with results here?**
+**TODO image with learning curves**
 
 # Results
 
-The following are the results of evaluating the F1 score using the union of the detection and classification model:
+The following are the results of evaluating the F1 score using the union of the detection and classification models:
 
 | Model            	| F1 Score 	|
 |------------------	|----------	|
