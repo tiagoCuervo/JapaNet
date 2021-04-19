@@ -148,7 +148,7 @@ The baseline convolutional neural network we have developed for the classificati
 ![Baseline Convolutional Model Architecture](./figures/baseline_arch.png?raw=true)
 
 
-Training of the baseline convolutional net has been performed with a constant learning rate of 0.001, sparse categorical cross-entropy loss, Adam optimizer, batch size of 512 and 20 epochs.
+Training of the baseline convolutional net has been performed with a constant learning rate of 0.001, categorical cross-entropy loss, Adam optimizer, batch size of 512 and 20 epochs.
 
 - Sample learning curves obtained from the Baseline Convolutional classification model:
 
@@ -157,7 +157,7 @@ Training of the baseline convolutional net has been performed with a constant le
 
 ### ResNet18
 
-Aside from our own simple baseline model, we have tried using the well known ResNet model, more specifically the ResNet18 architecture. The model has been implemented by hand. The training process was performed with a reduce on plateau learning rate schedule, sparse categorical cross-entropy loss, Adam optimizer, batch size of 256 and 100 epochs.
+Aside from our own simple baseline model, we have tried using the well known ResNet model, more specifically the ResNet18 architecture. The model has been implemented by hand. The training process was performed with a reduce on plateau learning rate schedule, categorical cross-entropy loss, Adam optimizer, batch size of 256 and 100 epochs.
 
 - Sample learning curves obtained from the ResNet18 classification model:
 
@@ -168,11 +168,13 @@ Aside from our own simple baseline model, we have tried using the well known Res
 
 The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer (units=1024) followed by batch normalization, leaky ReLU (alpha=0.1) and dropout (rate=0.25) layers before the final output layer with a suitable number of outputs (4206) has been used for the purposes of our experiments. 
 
-The training process has been performed with a random initialization of model weights, reduce on plateau learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 4096 and 100 epochs. For this model we additionally used the class weighting scheme described in [6] to try to counter the considerable class imbalance present in the data set.
+The training process has been performed with a random initialization of model weights, reduce on plateau learning schedule, minimal learning rate of 1e-4, categorical cross-entropy loss, Adam optimizer, batch size of 4096 and 100 epochs. For this model we additionally used the class weighting scheme described in [6] to try to counter the considerable class imbalance present in the data set.
 
 - Sample learning curves obtained from the MobilenetV3 classification model:
 
 ![Learning curves from the MobileNetV3 Large classification model](./figures/mobil_curves.png?raw=true)
+
+Due to time limitations of the project, we were not able to train the MobileNet model with more epochs. However, considering the above learning curves we can observe some highly probable possibility of improvement if we allowed more epochs for training.
 
 # Results
 
