@@ -80,12 +80,10 @@ Script containing the detection and classification models used in `main.py`. At 
 
 Script for running the detection and classification experiments. 
 
-The following modes are accepted for both tasks through the `--mode` flag:
+The following modes are set through the `--mode` flag:
 
-- `evaluate` : Evaluate on the evaluation data.
-- `test` : Tests training, evaluating and exporting the estimator for a single step.
 - `train` : Fit the estimator using the training data.
-- `train_and_evaluate` : Interleaves training and evaluation.
+- `evaluate` : Evaluate on the evaluation data (requires previous training of both models or a path to saved models specified with the flags `--detectorPath` and `--classifierPath`).
 
 # Suggested Usage
 
