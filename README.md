@@ -15,6 +15,9 @@
 - [Results](#results)
     - [Detection](#detection)
     - [Classification](#classification) 
+        -[Baseline ConvNet](#baseline-convnet)
+        -[ResNet18](#resnet18)
+        -[MobileNetV3](#mobilenetv3)
 - [References](#references)
 
 # Aim
