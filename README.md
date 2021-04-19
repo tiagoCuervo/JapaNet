@@ -138,7 +138,7 @@ The first channel is a heat map of the predicted center of the character. The br
 
 ![Bounding Boxes generated with CenterNet](./figures/boxes.png?raw=true)
 
-Overall, the model performs nicely for small and close to average characters (left. Bear in mind that the small anotations on the sides of the columns are meant to be ignored by the model), but as can be seen (right), it can fail for unusually large characters (right), as these were rather uncommon on the train set.
+Overall, the model performs nicely for small and close to average characters (left. Bear in mind that the small anotations on the sides of the columns are meant to be ignored by the model), but as can be seen (right), it can fail for unusually large characters, as these were rather uncommon on the train set.
 
 ## Classification
 
