@@ -12,19 +12,18 @@
     - [model.py](#model.py)
     - [main.py](#main.py)
 - [Suggested Usage](#suggested-usage)
-- [Results](#results)
+- [Models](#models)
     - [Detection](#detection)
     - [Classification](#classification) 
         - [Baseline ConvNet](#baseline-convnet)
         - [ResNet18](#resnet18)
         - [MobileNetV3](#mobilenetv3)
+- [Results](#results)
 - [References](#references)
 
 # Aim
 
 The main goal of this project has been to develop a model (models) that would perform detection and classification of ancient Japanese characters (Kuzushiji cursive script), in which classification consists of mapping the Kuzushiji characters to their modern Japanese counterparts. 
-
-
 
 The main motivation behind the project choice has been to utilize artificial intelligence tools to contribute to a wider ongoing research aimed at making ancient Japanese culture and history more available to people[1]. Sources written in Kuzushiji cannot be read nor appreciated without appropriate translation by anyone except only a small number of experts. Being able to make the ancient Japanese heritage more accessible to a wider public seemed like a fantastic real-life application of Machine Learning.
 
@@ -169,20 +168,17 @@ Aside from our own simple baseline model, we have tried using the well known Res
 
 ### MobileNetV3
 
-The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer (units=1024) followed by batch normalization, leaky ReLU (alpha=0.1) and dropout (rate=0.25) layers before the final output layer with suitable number of outputs (4206) has been used for the purposes of our experiments. 
+The core of the MobileNetV3 Large[5] model available in the keras.applications package with an additional densely connected layer (units=1024) followed by batch normalization, leaky ReLU (alpha=0.1) and dropout (rate=0.25) layers before the final output layer with a suitable number of outputs (4206) has been used for the purposes of our experiments. 
 
-The training process has been performed with a random initialization of model weights, *reduce-on-plateau* learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 4096 and 100 epochs. For this model we additionally used the class weighting scheme described in [6] to try to counter the considerable class imbalance present in the data set.
+The training process has been performed with a random initialization of model weights, reduce on plateau learning schedule, minimal learning rate of 1e-4, sparse categorical cross-entropy loss, Adam optimizer, batch size of 4096 and 100 epochs. For this model we additionally used the class weighting scheme described in [6] to try to counter the considerable class imbalance present in the data set.
 
 - Sample learning curves obtained from the MobilenetV3 classification model:
 
-**image with learning curves**
-
-
-- **TODO table with results here?**
+![Learning curves from the MobileNetV3 Large classification model](./figures/mobil_curves.png?raw=true)
 
 # Results
 
-The following are the results of evaluating the F1 score using the union of the detection and classification model:
+The following are the results of evaluating the F1 score using the union of the detection and classification models:
 
 | Model            	| F1 Score 	|
 |------------------	|----------	|
@@ -196,10 +192,10 @@ The following are the results of evaluating the F1 score using the union of the 
 
 - [2] *Kuzushiji Recognition*, URL: https://www.kaggle.com/c/kuzushiji-recognition/data, last accessed 18.04.2021
 
-- [3] Zhou et al. [*Objects as Points*](https://arxiv.org/abs/1904.07850), 	Computer Vision and Pattern Recognition (2019)
+- [3] Zhou et al., [*Objects as Points*](https://arxiv.org/abs/1904.07850), Computer Vision and Pattern Recognition (2019)
 
-- [4] He, Kaiming et al. [*Deep residual learning for image recognition*](https://arxiv.org/abs/1512.03385), Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2016)
+- [4] He et al., [*Deep residual learning for image recognition*](https://arxiv.org/abs/1512.03385), Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2016)
 
-- [5] A. Howard et al, [*Searching for MobileNetV3*](https://arxiv.org/abs/1905.02244), IEEE/CVF International Conference on Computer Vision (ICCV) (2019)
+- [5] Howard et al., [*Searching for MobileNetV3*](https://arxiv.org/abs/1905.02244), IEEE/CVF International Conference on Computer Vision (ICCV) (2019)
 
-- [6] Cui, Y., Jia, M., Lin, T.-Y., Song, Y., and Belongie, S., [*Class-Balanced Loss Based on Effective Number of Samples*](https://arxiv.org/abs/1901.05555), <i>arXiv e-prints</i>, 2019.
+- [6] Cui et al., [*Class-Balanced Loss Based on Effective Number of Samples*](https://arxiv.org/abs/1901.05555), Computer Vision and Pattern Recognition (2019)
